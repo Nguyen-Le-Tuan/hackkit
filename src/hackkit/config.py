@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PROVIDERS = ("anthropic", "ollama", "fake")
+PROVIDERS = ("anthropic", "groq", "ollama", "fake")
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -25,6 +25,8 @@ class Settings:
     llm_provider: str = "fake"
     llm_model: str = ""
     anthropic_api_key: str | None = None
+    groq_api_key: str | None = None
+    groq_model: str = "openai/gpt-oss-120b"
     ollama_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.2"
     demo_mode: bool = False
@@ -40,6 +42,8 @@ class Settings:
             llm_provider=provider,
             llm_model=os.getenv("LLM_MODEL", "").strip(),
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY") or None,
+            groq_api_key=os.getenv("GROQ_API_KEY") or None,
+            groq_model=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip(),
             ollama_url=os.getenv("OLLAMA_URL", "http://localhost:11434").rstrip("/"),
             ollama_model=os.getenv("OLLAMA_MODEL", "llama3.2"),
             demo_mode=_env_bool("DEMO_MODE"),

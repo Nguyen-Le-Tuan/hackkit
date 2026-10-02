@@ -25,6 +25,10 @@ def get_client(settings: Settings, fake_responder=None) -> LLMClient:
         return AnthropicClient(
             settings.llm_model, settings.timeout_s, api_key=settings.anthropic_api_key
         )
+    if settings.llm_provider == "groq":
+        from .groq_client import GroqClient
+
+        return GroqClient(settings.groq_model, settings.groq_api_key, settings.timeout_s)
     if settings.llm_provider == "ollama":
         from .ollama_client import OllamaClient
 

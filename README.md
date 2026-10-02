@@ -22,8 +22,8 @@ messy input (text, image, PDF)
   confidence and the fields it guessed. Those become "needs human review" flags in the UI.
 - **The demo cannot die on stage.** Every successful model or API response is cached. Turn on
   demo mode and the app replays saved results without touching the network.
-- **Provider-neutral.** Anthropic API, a local model through Ollama (if cloud APIs are not
-  allowed), or a fake client for tests and offline rehearsal. Same feature code for all three.
+- **Provider-neutral.** Anthropic API, Groq (free tier), a local model through Ollama (if cloud
+  APIs are not allowed), or a fake client for tests and offline rehearsal. Same feature code for all.
 - **Measured, not vibes.** `hackkit.evals` scores extraction accuracy per field on labeled cases.
 
 ## Quickstart
@@ -35,7 +35,8 @@ make test             # full test suite, no network or key needed
 ```
 
 To use a real model, set `LLM_PROVIDER=anthropic`, `LLM_MODEL` and `ANTHROPIC_API_KEY` in `.env`,
-then `make run`. For a local model, install Ollama and set `LLM_PROVIDER=ollama`.
+then `make run`. For Groq, set `LLM_PROVIDER=groq` and `GROQ_API_KEY` (default model
+`openai/gpt-oss-120b`). For a local model, install Ollama and set `LLM_PROVIDER=ollama`.
 
 ## Add a feature in three steps
 
