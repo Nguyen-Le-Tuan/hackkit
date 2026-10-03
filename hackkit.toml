@@ -1,0 +1,39 @@
+# hackkit.toml: rules the machines enforce (scripts/guard.py, verify_pr.py, freeze.py).
+# Read with the standard library (tomllib). Every key is optional: a missing key falls back to
+# the default shown here (see scripts/hackkit_config.py).
+
+[guard]
+# Files with these extensions may not be committed outside the `allow` paths below.
+# They are almost always partner documents, exports, archives, media or databases.
+blocked_extensions = [
+  ".xlsx", ".xls", ".xlsm", ".docx", ".doc", ".pptx", ".ppt", ".pdf", ".key", ".numbers",
+  ".pages", ".zip", ".7z", ".rar", ".mp4", ".mov", ".webm", ".sqlite", ".db",
+]
+# Glob paths (from the repo root; `**` spans folders) where those extensions ARE allowed.
+# Only add a path here when the file is public and needed in the repo (pitch assets, fixtures).
+allow = ["docs/pitch/assets/**", "web/assets/**", "tests/fixtures/**"]
+# Any single file above this size (MB) is refused: keep big assets out of git.
+max_file_mb = 5
+# Paths that must never be committed. A pattern starting with "!" re-allows a path that an
+# earlier pattern blocked (last match wins, like .gitignore).
+# partner/ is git-ignored on purpose: confidential partner files live there, locally only.
+blocked_paths = [
+  "**/node_modules/**",
+  "partner/**",
+  "**/.env",
+  "**/.env.*",
+  "!**/.env.example",
+]
+
+[verify]
+# `make verify PR=N` fails when a PR targets any other branch (the stacked-PR mistake).
+base_branch = "main"
+# Regexes that must not appear in the lines a PR ADDS (owner names, partner names, internal
+# URLs...). Python `re` syntax; prefix with (?i) for case-insensitive. Example: ["(?i)acme corp"]
+forbid_patterns = []
+# Start the app in the merged worktree and GET /api/health and / (needs fastapi installed).
+smoke = true
+
+[freeze]
+# During a demo freeze, only PRs carrying this label pass the CI `freeze-check` job.
+label = "bugfix"

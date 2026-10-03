@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Pre-commit hook: refuse commits that add partner documents, big files, gitlinks, escaping
+# symlinks, node_modules, .env files or secrets. Installed by `make hooks`
+# (git config core.hooksPath scripts/hooks). Rules: [guard] in hackkit.toml.
+# Emergency bypass: git commit --no-verify (CI still runs `guard.py --all` on every push).
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+guard="$root/scripts/guard.py"
+if [[ ! -f "$guard" ]]; then
+  exit 0  # a branch without the guard (older history): nothing to run
+fi
+
+if [[ -x "$root/.venv/bin/python" ]]; then
+  py="$root/.venv/bin/python"
+elif command -v python3 >/dev/null 2>&1; then
+  py="python3"
+else
+  echo "pre-commit: no python3 found; skipping the guard (CI still runs it)" >&2
+  exit 0
+fi
+if ! "$py" -c 'import sys; sys.exit(sys.version_info < (3, 11))'; then
+  echo "pre-commit: $py is older than Python 3.11; skipping the guard (run make setup)" >&2
+  exit 0
+fi
+
+exec "$py" "$guard" --staged --repo "$root"
