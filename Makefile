@@ -1,4 +1,4 @@
-.PHONY: setup run demo test lint fmt eval feature docker
+.PHONY: setup run demo test lint fmt eval feature docker lanes
 
 setup:  ## create venv and install everything
 	python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" && cp -n .env.example .env || true
@@ -29,3 +29,6 @@ feature: ## make feature NAME=intake_triage TITLE="Intake triage"
 
 docker:
 	docker build -t hackkit . && docker run --rm -p 8501:8501 --env-file .env hackkit
+
+lanes:  ## rebuild the workflow block of docs/DAY_OF.md; optional: make lanes SET="T1=merged T2=doing"
+	python scripts/lanes.py $(if $(SET),--set $(SET))

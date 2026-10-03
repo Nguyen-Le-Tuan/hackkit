@@ -18,6 +18,10 @@
 # recorder keeps appending to it afterwards.
 # --snapshot-only (testing): wait, take the snapshot, print the temp file path, exit. No agents,
 #   no lid guard, no lock.
+# Secrets: the agents run in a worktree NEXT TO the repo and can read ../.env. A real run therefore
+#   refuses to start while .env holds filled-in keys (override: --allow-secrets), and after the
+#   run every changed file is scanned for key values (see the 'Secret scan' block in STATUS.md).
+#   Keep API keys out of .env until the run has finished.
 #
 # Self-healing: every step is tried up to 3 times (agent, agent again, then Claude Opus with
 # high effort). If Codex is unusable, its steps go straight to Claude Opus.
@@ -50,7 +54,7 @@ RETRY_PAUSE="${RETRY_PAUSE:-20}"                       # seconds, multiplied by 
 LID_STATE="${LID_STATE:-$HOME/.cache/orchestrate_lid_restore.sh}"
 # --------------------------------------------------------------------------
 
-RUN_NOW=0 LOCK=0 CHECK=0 LID_GUARD=1 LB_MODE=0 LB_URL_SET=0 SNAPSHOT_ONLY=0
+RUN_NOW=0 LOCK=0 CHECK=0 LID_GUARD=1 LB_MODE=0 LB_URL_SET=0 SNAPSHOT_ONLY=0 ALLOW_SECRETS=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --now) RUN_NOW=1; shift ;;
@@ -62,6 +66,7 @@ while [[ $# -gt 0 ]]; do
     --check) CHECK=1; shift ;;
     --snapshot-only) SNAPSHOT_ONLY=1; shift ;;
     --no-lid-guard) LID_GUARD=0; shift ;;
+    --allow-secrets) ALLOW_SECRETS=1; shift ;;
     *) echo "Unknown argument: $1"; exit 2 ;;
   esac
 done
@@ -96,6 +101,7 @@ else ARGS+=(--transcript "$TRANSCRIPT_PATH"); fi
 [[ $LOCK -eq 1 ]] && ARGS+=(--lock)
 [[ $CHECK -eq 1 ]] && ARGS+=(--check)
 [[ $LID_GUARD -eq 0 ]] && ARGS+=(--no-lid-guard)
+[[ $ALLOW_SECRETS -eq 1 ]] && ARGS+=(--allow-secrets)
 if [[ -z "${AWAKE:-}" ]]; then
   export AWAKE=1
   if [[ "$(uname)" == "Darwin" ]] && command -v caffeinate >/dev/null; then
@@ -164,15 +170,26 @@ preflight_env() {
   [[ -f "$REPO_DIR/CLAUDE.md" ]] || die "CLAUDE.md not found in $REPO_DIR"
   [[ -f "$REPO_DIR/STOP" ]] && die "Remove $REPO_DIR/STOP before starting."
   [[ -z "$TO" ]] && note "WARN: no 'timeout' command. Steps will not be time-boxed."
+  if [[ -f "$REPO_DIR/.env" ]]; then
+    filled="$(python3 "$SCRIPT_DIR/secret_scan.py" --check-env --env "$REPO_DIR/.env" 2>&1)" && rc=0 || rc=$?
+    if [[ $rc -eq 0 ]]; then
+      note "OK: $REPO_DIR/.env holds no filled-in secret values."
+    else
+      names="$(tr '\n' ' ' <<<"$filled")"
+      msg=".env holds filled-in keys ($names). The agents can read ../.env. Remove the keys until the run is done."
+      if [[ $CHECK -eq 1 || $ALLOW_SECRETS -eq 1 ]]; then note "WARN: $msg"; else die "$msg (override: --allow-secrets)"; fi
+    fi
+  fi
 
   echo "Smoke-testing agents (a few seconds each) ..."
-  smoke_claude || die "Claude (default model) failed the smoke test. Run '$CLAUDE_BIN' once and log in / fix it."
+  smoke_claude || { sleep 3; smoke_claude; } || die "Claude (default model) failed the smoke test. Run '$CLAUDE_BIN' once and log in / fix it."
   note "OK: Claude (default model) answers."
   smoke_claude --model "$FALLBACK_MODEL" --effort "$FALLBACK_EFFORT" ||
+    smoke_claude --model "$FALLBACK_MODEL" --effort "$FALLBACK_EFFORT" ||
     die "Fallback $FALLBACK_MODEL (effort $FALLBACK_EFFORT) failed the smoke test."
   note "OK: fallback $FALLBACK_MODEL (effort $FALLBACK_EFFORT) answers."
   if [[ $CODEX_OK -eq 1 ]]; then
-    if smoke_codex; then note "OK: Codex answers."
+    if smoke_codex || { sleep 3; smoke_codex; }; then note "OK: Codex answers."
     else CODEX_OK=0; note "WARN: Codex failed the smoke test (login/version/model?). Its steps will run on Claude Opus."; fi
   fi
 
@@ -456,8 +473,17 @@ $P4"
   fi
 fi
 
+# ---------------- SECRET SCAN ----------------
+scan_out="$(python3 "$SCRIPT_DIR/secret_scan.py" --repo "$WT_DIR" --since "$START_SHA" --env "$REPO_DIR/.env" 2>&1)" && scan_rc=0 || scan_rc=$?
+SECRET_ALERT=0; [[ $scan_rc -ne 0 ]] && SECRET_ALERT=1
+
 # ---------------- SUMMARY ----------------
 {
+  echo; echo "## Secret scan"
+  if [[ $SECRET_ALERT -eq 1 ]]; then
+    echo "**ALERT: a key or secret value was found in the agent output. Do NOT merge agent/plan. Delete the branch.**"
+  fi
+  echo '```'; echo "$scan_out"; echo '```'
   echo; echo "## Files produced ($(date +%H:%M))"
   for f in BRIEF.md CRITIQUE.md PLANS.md PLAN_REVIEW.md; do
     [[ -s "$DOCS_DIR/$f" ]] && echo "- [x] docs/agent/$f" || echo "- [ ] docs/agent/$f (missing)"
@@ -471,4 +497,5 @@ fi
   echo; echo "Read first: docs/agent/PLAN_REVIEW.md (checklist at the end), then BRIEF.md."
 } >>"$STATUS"
 checkpoint "status"
+[[ $SECRET_ALERT -eq 1 ]] && log "ALERT: secret found in the agent output, see the Secret scan block. Do NOT merge agent/plan."
 log "DONE. See $STATUS"
