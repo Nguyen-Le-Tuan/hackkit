@@ -10,3 +10,14 @@ data/private/
 .DS_Store
 .claude/settings.local.json
 .claude/worktrees/
+
+# --- guards (P3) ---
+# partner/: confidential partner and sponsor files (spreadsheets, contracts, transcripts).
+# Keep them here so agents can read them locally; this folder must never be committed
+# (scripts/guard.py also blocks it). Do not add a README inside: the whole folder is ignored.
+partner/
+node_modules/
+*.pptx.validation.json
+docs/pitch/build/
+docs/pitch/out/
+web/snapshots/*.tmp
