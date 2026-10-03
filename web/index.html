@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>hackkit</title>
+  <meta name="description" content="Built with hackkit: messy input in, checked answers out.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // Apply the saved theme before first paint (no flash).
+    try {
+      const prefs = JSON.parse(localStorage.getItem("hackkit.prefs") || "{}");
+      if (prefs.theme) document.documentElement.dataset.theme = prefs.theme;
+    } catch {}
+  </script>
+</head>
+<body>
+  <div id="app">
+    <noscript>This app needs JavaScript.</noscript>
+  </div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

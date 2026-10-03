@@ -65,8 +65,16 @@ def extract(
     schema_json = json.dumps(schema.model_json_schema(), sort_keys=True)
     system = SYSTEM_TEMPLATE.format(schema=schema_json)
     prompt = f"{instructions.strip()}\n\n<input>\n{text}\n</input>"
+    # Provider and model are part of the key: a result saved by the fake provider must never be
+    # replayed as if a real model had produced it (and vice versa).
     key = DiskCache.make_key(
-        schema.__name__, schema_json, system, prompt, *(a.data_b64 for a in attachments)
+        getattr(client, "name", "?"),
+        getattr(client, "model", "?"),
+        schema.__name__,
+        schema_json,
+        system,
+        prompt,
+        *(a.data_b64 for a in attachments),
     )
 
     if cache is not None and (cached := cache.get(key)) is not None:

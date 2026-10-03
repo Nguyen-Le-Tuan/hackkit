@@ -33,6 +33,12 @@ class Feature:
     sample_text: str = ""
     sample_response: str = ""  # JSON the fake provider returns, so the demo works offline
     tags: tuple[str, ...] = field(default_factory=tuple)
+    # Extra inputs the demo shows; `make snapshot` saves their results for the static site.
+    demo_inputs: tuple[str, ...] = field(default_factory=tuple)
+    # Optional fastapi.APIRouter with feature-specific endpoints, served under /api/<key>/.
+    router: Any = None
+    # GET paths under /api/ that `make snapshot` saves too, e.g. ("/api/<key>/top?n=10",).
+    snapshot_paths: tuple[str, ...] = field(default_factory=tuple)
 
 
 REGISTRY: dict[str, Feature] = {}

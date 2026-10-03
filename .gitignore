@@ -9,3 +9,4 @@ evals/results/
 data/private/
 .DS_Store
 .claude/settings.local.json
+.claude/worktrees/

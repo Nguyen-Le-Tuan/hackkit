@@ -1,16 +1,34 @@
-.PHONY: setup run demo test lint fmt eval feature docker lanes
+.PHONY: setup run demo web snapshot web-test test lint fmt eval feature docker lanes
+
+PORT ?= 8000
+HOST ?= 127.0.0.1
+WEB_PORT ?= 8600
+UVICORN = uvicorn --factory hackkit.server:create_app --host $(HOST) --port $(PORT)
 
 setup:  ## create venv and install everything
 	python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" && cp -n .env.example .env || true
 
-run:    ## start the demo app with the provider from .env
-	streamlit run app/streamlit_app.py
+run:    ## API + web UI on http://localhost:8000 with the provider from .env (auto-reload); HOST=0.0.0.0 for LAN
+	@echo "Open http://localhost:$(PORT)  (API docs: /api/docs, demo check: /#/doctor)"
+	$(UVICORN) --reload --reload-dir src
 
 demo:   ## offline rehearsal: fake provider, no key, no network
-	LLM_PROVIDER=fake streamlit run app/streamlit_app.py
+	@echo "Open http://localhost:$(PORT)"
+	LLM_PROVIDER=fake $(UVICORN)
 
-test:
+web:    ## static mode only (what GitHub Pages serves): the UI reads web/snapshots/
+	@echo "Open http://localhost:$(WEB_PORT)/?static=1"
+	python -m http.server $(WEB_PORT) --bind 127.0.0.1 -d web
+
+snapshot: ## save API responses to web/snapshots/ (run once with the REAL model before the demo)
+	python -m hackkit.snapshot
+
+web-test: ## unit tests for the pure JS modules (needs Node 20+)
+	node --test web/tests/*.test.mjs
+
+test:   ## Python tests, then JS tests if Node is installed
 	pytest
+	@if command -v node >/dev/null; then node --test web/tests/*.test.mjs; else echo "(node not found: skipped web tests)"; fi
 
 lint:
 	ruff check . && ruff format --check .
@@ -28,7 +46,7 @@ feature: ## make feature NAME=intake_triage TITLE="Intake triage"
 	python -m hackkit.scaffold $(NAME) "$(TITLE)"
 
 docker:
-	docker build -t hackkit . && docker run --rm -p 8501:8501 --env-file .env hackkit
+	docker build -t hackkit . && docker run --rm -p 8000:8000 --env-file .env hackkit
 
 lanes:  ## rebuild the workflow block of docs/DAY_OF.md; optional: make lanes SET="T1=merged T2=doing"
 	python scripts/lanes.py $(if $(SET),--set $(SET))

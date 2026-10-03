@@ -1,0 +1,18 @@
+[
+  {
+    "key": "receipt",
+    "title": "Receipt checker",
+    "description": "Reads a receipt and checks that the items add up to the printed total.",
+    "accepts": [
+      "text",
+      "image",
+      "pdf"
+    ],
+    "sample_text": "CORNER MARKET  -  2026-09-12\n2 x Oat milk        3.49\n1 x Bagels (6)      4.25\n1 x Coffee beans   11.99\nTax                 1.34\nTOTAL              24.60",
+    "demo_inputs": [],
+    "tags": [
+      "example"
+    ],
+    "has_routes": false
+  }
+]

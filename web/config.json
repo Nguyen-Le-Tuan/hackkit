@@ -1,0 +1,29 @@
+{
+  "name": "hackkit",
+  "tagline": "Messy input in, checked answers out",
+  "accent": "#2dd4bf",
+  "theme": "dark",
+  "logo": "assets/logo.svg",
+  "hero": {
+    "eyebrow": "Hackathon starter",
+    "title": "Turn messy input into answers you can trust",
+    "highlight": "answers you can trust",
+    "lede": "An LLM reads the document. Plain, tested code does the math and flags anything a human should check. Every number shows where it came from.",
+    "proof": ["Runs offline", "Any LLM: Claude, Groq, Ollama", "Numbers checked by code"]
+  },
+  "impact_title": "Impact",
+  "impact_note": "Replace with one real number for your problem.",
+  "impact": [
+    { "label": "Time to answer", "value": "8 s", "note": "vs. 15 min by hand" },
+    { "label": "Errors caught", "value": "1 of 1", "note": "sample receipt" },
+    { "label": "Cost per run", "value": "$0.002", "note": "illustrative", "demo": true }
+  ],
+  "steps": [
+    { "title": "Paste or drop the input", "text": "Text, an image or a PDF: a receipt, a form, a bill." },
+    { "title": "The model reads it", "text": "Fields come back validated against a schema, with the model's own confidence." },
+    { "title": "Code checks it", "text": "Deterministic rules do the math and flag anything that does not add up." }
+  ],
+  "links": { "repo": "", "devpost": "", "video": "" },
+  "footer": "",
+  "nav_features": true
+}
