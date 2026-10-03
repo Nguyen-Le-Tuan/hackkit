@@ -16,6 +16,12 @@
 # --transcript: a file or a quoted glob; the NEWEST match is used.
 # Either way the transcript is copied at exactly --at HH:MM (default 11:00), even if the
 # recorder keeps appending to it afterwards.
+# --document: the --transcript file is a WRITTEN document (e.g. a handout converted to text), not speech.
+# --with-file PATH (repeatable): prepend written documents to the snapshot, e.g. the problem statement
+#   together with a live recording of the grading/pitch briefing:
+#     ./scripts/orchestrate.sh --now --lecturebridge --with-file docs/<problem-statement>.txt
+# --chosen "TEXT": the team has already picked its challenge; the plan then focuses on it.
+#   Previous BRIEF/CRITIQUE/PLANS/PLAN_REVIEW are archived in docs/agent/archive/<time>/ before a re-run.
 # --snapshot-only (testing): wait, take the snapshot, print the temp file path, exit. No agents,
 #   no lid guard, no lock.
 # Secrets: the agents run in a worktree NEXT TO the repo and can read ../.env. A real run therefore
@@ -54,7 +60,9 @@ RETRY_PAUSE="${RETRY_PAUSE:-20}"                       # seconds, multiplied by 
 LID_STATE="${LID_STATE:-$HOME/.cache/orchestrate_lid_restore.sh}"
 # --------------------------------------------------------------------------
 
-RUN_NOW=0 LOCK=0 CHECK=0 LID_GUARD=1 LB_MODE=0 LB_URL_SET=0 SNAPSHOT_ONLY=0 ALLOW_SECRETS=0
+RUN_NOW=0 LOCK=0 CHECK=0 LID_GUARD=1 LB_MODE=0 LB_URL_SET=0 SNAPSHOT_ONLY=0 ALLOW_SECRETS=0 DOC_MODE=0
+WITH_FILES=()
+CHOSEN="${CHOSEN:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --now) RUN_NOW=1; shift ;;
@@ -67,6 +75,9 @@ while [[ $# -gt 0 ]]; do
     --snapshot-only) SNAPSHOT_ONLY=1; shift ;;
     --no-lid-guard) LID_GUARD=0; shift ;;
     --allow-secrets) ALLOW_SECRETS=1; shift ;;
+    --document) DOC_MODE=1; shift ;;
+    --with-file) WITH_FILES+=("$2"); shift 2 ;;
+    --chosen) CHOSEN="$2"; shift 2 ;;
     *) echo "Unknown argument: $1"; exit 2 ;;
   esac
 done
@@ -88,6 +99,13 @@ if [[ $LB_MODE -eq 1 ]]; then
   LB_URL="${LB_URL%/}"
   [[ "$LB_URL" =~ ^https?://[^[:space:]]+$ ]] || { echo "--lecturebridge-url must look like http://127.0.0.1:8000"; exit 2; }
 fi
+if [[ $DOC_MODE -eq 1 && $LB_MODE -eq 1 ]]; then echo "--document applies to --transcript files, not --lecturebridge."; exit 2; fi
+if [[ ${#CHOSEN} -gt 300 ]]; then echo "--chosen is limited to 300 characters."; exit 2; fi
+for i in "${!WITH_FILES[@]}"; do
+  f="${WITH_FILES[$i]/#\~/$HOME}"; [[ "$f" == /* ]] || f="$PWD/$f"
+  [[ -s "$f" ]] || { echo "--with-file: not found or empty: $f"; exit 2; }
+  WITH_FILES[i]="$f"
+done
 TRANSCRIPT_PATH="${TRANSCRIPT_PATH/#\~/$HOME}"
 [[ -z "$TRANSCRIPT_PATH" || "$TRANSCRIPT_PATH" == /* ]] || TRANSCRIPT_PATH="$PWD/$TRANSCRIPT_PATH"
 if [[ $SNAPSHOT_ONLY -eq 1 ]]; then LID_GUARD=0; LOCK=0; fi
@@ -102,6 +120,9 @@ else ARGS+=(--transcript "$TRANSCRIPT_PATH"); fi
 [[ $CHECK -eq 1 ]] && ARGS+=(--check)
 [[ $LID_GUARD -eq 0 ]] && ARGS+=(--no-lid-guard)
 [[ $ALLOW_SECRETS -eq 1 ]] && ARGS+=(--allow-secrets)
+[[ $DOC_MODE -eq 1 ]] && ARGS+=(--document)
+for f in "${WITH_FILES[@]}"; do ARGS+=(--with-file "$f"); done
+[[ -n "$CHOSEN" ]] && ARGS+=(--chosen "$CHOSEN")
 if [[ -z "${AWAKE:-}" ]]; then
   export AWAKE=1
   if [[ "$(uname)" == "Darwin" ]] && command -v caffeinate >/dev/null; then
@@ -316,6 +337,17 @@ else
   cp -- "$SRC" "$SNAP_TMP" || die "cannot copy transcript $SRC"
   SRC_MTIME="$(date -d "@$(stat -c %Y "$SRC")" +%H:%M:%S)"
 fi
+# Several sources (or a written document): label each source so the agents know what they are reading.
+if [[ ${#WITH_FILES[@]} -gt 0 || $DOC_MODE -eq 1 ]]; then
+  COMPOSED="$(mktemp)"
+  for f in "${WITH_FILES[@]}"; do
+    { echo "===== DOCUMENT (written, converted to text): $(basename "$f") ====="; cat -- "$f"; echo; } >>"$COMPOSED"
+  done
+  if [[ $LB_MODE -eq 1 ]]; then echo "===== LIVE TRANSCRIPT (speech-to-text of the room, via LectureBridge) =====" >>"$COMPOSED"
+  elif [[ $DOC_MODE -eq 1 ]]; then echo "===== DOCUMENT (written, converted to text): $(basename "$SRC") =====" >>"$COMPOSED"
+  else echo "===== TRANSCRIPT: $(basename "$SRC") =====" >>"$COMPOSED"; fi
+  cat -- "$SNAP_TMP" >>"$COMPOSED"; mv -- "$COMPOSED" "$SNAP_TMP"
+fi
 SNAP_DONE="$(date +%H:%M:%S)"
 SRC_BYTES="$(stat -c %s "$SNAP_TMP")"
 if [[ $SNAPSHOT_ONLY -eq 1 ]]; then
@@ -346,10 +378,17 @@ done
 
 START_SHA="$(git -C "$WT_DIR" rev-parse HEAD)"
 # A reused worktree may hold outputs of an older run: a stale file must never pass for a new one.
+if compgen -G "$DOCS_DIR/BRIEF.md" >/dev/null; then   # keep the previous run's outputs
+  ARCH="$DOCS_DIR/archive/$(date +%Y%m%d-%H%M%S)"; mkdir -p "$ARCH"
+  for f in BRIEF CRITIQUE PLANS PLAN_REVIEW; do [[ -f "$DOCS_DIR/$f.md" ]] && cp -- "$DOCS_DIR/$f.md" "$ARCH/"; done
+fi
 rm -f "$DOCS_DIR"/{BRIEF,CRITIQUE,PLANS,PLAN_REVIEW}.md
 mv -- "$SNAP_TMP" "$DOCS_DIR/transcript_snapshot.txt"
 {
   echo "# Agent run status"; echo
+  [[ $DOC_MODE -eq 1 ]] && echo "Source kind: written document (not speech)."
+  for f in "${WITH_FILES[@]}"; do echo "Extra document: \`$(basename "$f")\` ($(stat -c %s "$f") bytes)."; done
+  [[ -n "$CHOSEN" ]] && echo "Chosen challenge (given by the human): $CHOSEN"
   echo "Started $(date '+%Y-%m-%d %H:%M')."
   if [[ $LB_MODE -eq 1 ]]; then
     echo "Transcript source: LectureBridge API (live, recording not stopped)."
@@ -452,6 +491,24 @@ read -r -d '' P4 <<'EOF'
 Task 4 (plan review). Read docs/agent/BRIEF.md, docs/agent/PLANS.md, CLAUDE.md and README.md. Do NOT edit them.
 Write docs/agent/PLAN_REVIEW.md: for each plan, what is over-scoped for 5 hours, what duplicates something hackkit already provides, what is missing, and a recommended cut-down version (max 4 tasks). End with a 5-line checklist for the humans to read first.
 EOF
+
+# ---------------- SOURCE / CHOICE NOTES ----------------
+if [[ ${#WITH_FILES[@]} -gt 0 || $DOC_MODE -eq 1 ]]; then
+  P1="SOURCE NOTE (overrides any wording about a noisy transcript below): the snapshot contains one or more SOURCES, each starting with a line that begins with '====='. A DOCUMENT source is an official written statement converted from paper by an AI tool: it has no misheard speech, but it may contain conversion errors, missing tables or garbled numbers, so quote its heading or page marker for each fact and flag numbers that look wrong. A LIVE TRANSCRIPT source is automatic speech-to-text: expect misheard words, cross-talk and gaps. For every fact say which source it comes from. If sources disagree, say so; prefer the written document for requirements and the live transcript for later announcements.
+
+$P1"
+  P2="SOURCE NOTE: the snapshot may contain written DOCUMENT sources (look for paper-to-text conversion errors instead of misheard words) and a LIVE TRANSCRIPT source (misheard words). Sources start with a line beginning with '====='.
+
+$P2"
+fi
+if [[ -n "$CHOSEN" ]]; then
+  P1="$P1
+OVERRIDE for item 3: the human has ALREADY CHOSEN the team's challenge: \"$CHOSEN\". Do NOT write \"ASSIGNMENT: UNKNOWN\". Write exactly: ASSIGNMENT: $CHOSEN (chosen by the human; the sources do not state an assignment)."
+  P3="$P3
+The human has ALREADY CHOSEN the team's challenge: \"$CHOSEN\". Write the full plan ONLY for that challenge, mark it ASSIGNED and put it first; give each other challenge at most three sentences."
+  P4="$P4
+The human has ALREADY CHOSEN the challenge \"$CHOSEN\". Review only that plan in detail; skip the others."
+fi
 
 # ---------------- RUN ----------------
 log "Planning chain"

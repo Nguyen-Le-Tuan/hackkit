@@ -32,6 +32,7 @@ ROLE_NOTES = {
     "claude": "agent",
     "codex": "agent",
     "partner-qa": "hỏi đối tác",
+    "researcher": "tìm dữ liệu công khai",
     "backup-integrator": "merge dự phòng",
 }
 STATE_VI = {
