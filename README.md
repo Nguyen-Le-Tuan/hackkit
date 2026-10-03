@@ -29,10 +29,15 @@ messy input (text, image, PDF)
 ## Quickstart
 
 ```bash
-make setup            # venv + install + copy .env.example to .env
-make demo             # runs the example feature offline, no key needed
-make test             # full test suite, no network or key needed
+make setup                  # venv + install + copy .env.example to .env
+source .venv/bin/activate   # once per terminal; make test/demo/run fail with "not found" without it
+make demo                   # runs the example feature offline, no key needed
+make test                   # full test suite, no network or key needed
+make lint                   # ruff check + format check (CI runs the same)
+make eval                   # scores every file in evals/cases/ (fake provider by default)
 ```
+
+Event day? Follow [docs/DAY_OF.md](docs/DAY_OF.md).
 
 To use a real model, set `LLM_PROVIDER=anthropic`, `LLM_MODEL` and `ANTHROPIC_API_KEY` in `.env`,
 then `make run`. For Groq, set `LLM_PROVIDER=groq` and `GROQ_API_KEY` (default model

@@ -18,8 +18,11 @@ lint:
 fmt:
 	ruff check . --fix && ruff format .
 
-eval:   ## score extraction accuracy, writes evals/results/latest.md
-	python -m hackkit.evals evals/cases/receipt.jsonl
+eval:   ## score every labeled case file; writes evals/results/<name>.md
+	@for f in evals/cases/*.jsonl; do \
+	  echo "== $$f"; \
+	  python -m hackkit.evals "$$f" --out "evals/results/$$(basename $$f .jsonl).md" || exit 1; \
+	done
 
 feature: ## make feature NAME=intake_triage TITLE="Intake triage"
 	python -m hackkit.scaffold $(NAME) "$(TITLE)"

@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from features.receipt import FEATURE as RECEIPT
 from hackkit.export import to_json, to_markdown
 from hackkit.feature import REGISTRY, discover
@@ -32,3 +34,12 @@ def test_exports_include_flags_and_data():
     result = run_feature(RECEIPT, FakeClient(lambda _r: RECEIPT.sample_response), text="x")
     assert "Needs human review" in to_markdown(result)
     assert json.loads(to_json(result))["feature"] == "receipt"
+
+
+@pytest.mark.parametrize("key", sorted(discover()))
+def test_every_feature_runs_offline_on_its_own_sample(key):
+    """A new feature's sample_response must validate against its schema, or `make demo` breaks."""
+    feature = discover()[key]
+    client = FakeClient(lambda _r: feature.sample_response)
+    result = run_feature(feature, client, text=feature.sample_text)
+    assert result.ok, f"{key}: sample_response does not validate against its schema"

@@ -53,10 +53,15 @@ Change `src/hackkit/` only for a real bug or a missing capability, and say so.
 - Secrets live in `.env` (git-ignored). Never read, print, log, or commit keys.
 
 ## Commands
-- Setup: `make setup` (or `python -m venv .venv && pip install -e ".[dev]"`)
+- Setup: `make setup` (or `python -m venv .venv && pip install -e ".[dev]"`), then
+  `source .venv/bin/activate` in every terminal before `make test` / `make lint` / `make run`.
 - Run: `make run` | offline rehearsal: `make demo`
 - Test: `pytest` | Lint: `make lint` | Format: `make fmt`
-- Eval: `python -m hackkit.evals evals/cases/<feature>.jsonl`
+- Eval: `make eval` (every file in `evals/cases/`) or `python -m hackkit.evals evals/cases/<feature>.jsonl`.
+  The fake provider replays each case's `fake_response`, so a 100% score only proves the
+  harness; run it once with a real model (`LLM_PROVIDER=groq` or `anthropic`) for real accuracy.
+  The eval scores TOP-LEVEL fields only and money is extracted as `float` (a `Decimal`
+  would serialize to a string and break matching).
 
 ## How to work
 - For changes over ~50 lines, write a short plan first and wait for approval.
