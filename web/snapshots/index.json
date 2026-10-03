@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-10-03T19:21:30",
+  "version": "0.2.0",
+  "provider": "fake",
+  "runs": {
+    "receipt": 1
+  },
+  "paths": [],
+  "problems": []
+}

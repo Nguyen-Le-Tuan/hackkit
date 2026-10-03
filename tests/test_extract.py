@@ -63,3 +63,18 @@ def test_schema_is_sent_to_the_model():
     client = FakeClient([json.dumps({"name": "Ana", "age": 30})])
     extract(client, Person, instructions="x", text="y")
     assert '"age"' in client.calls[0].system
+
+
+def test_cache_is_per_provider_and_model(cache):
+    """A result saved by the fake provider must not be replayed for a real model."""
+    extract(
+        FakeClient(['{"name": "Ana", "age": 30}']), Person, instructions="x", text="y", cache=cache
+    )
+
+    class RealLooking(FakeClient):
+        name, model = "anthropic", "claude-sonnet-5-5"
+
+    real = RealLooking(['{"name": "Bo", "age": 41}'])
+    result = extract(real, Person, instructions="x", text="y", cache=cache)
+    assert not result.from_cache and result.data == Person(name="Bo", age=41)
+    assert len(real.calls) == 1

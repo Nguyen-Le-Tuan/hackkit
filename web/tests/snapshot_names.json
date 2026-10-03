@@ -1,0 +1,8 @@
+[
+  ["/api/x/top?n=10&a=b", "x__top__a-b_n-10"],
+  ["api/receipt/stats", "receipt__stats"],
+  ["/api/", "root"],
+  ["/api/search?q=hello world&page=2", "search__page-2_q-hello-world"],
+  ["/api/a/b/c", "a__b__c"],
+  ["/other/path", "other__path"]
+]

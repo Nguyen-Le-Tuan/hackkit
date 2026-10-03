@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "static": true,
+  "version": "0.2.0",
+  "provider": "fake",
+  "providers": [
+    "anthropic",
+    "groq",
+    "ollama",
+    "fake"
+  ],
+  "demo_mode": true,
+  "features": 1
+}
