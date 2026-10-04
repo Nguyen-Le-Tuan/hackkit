@@ -55,6 +55,19 @@ highlight = ".callout.warn"
 seconds = 2.5
 
 [[step]]
+caption = "Ask the AI to explain it. Code checks every number it writes."
+
+[[step]]
+click = "text=Explain in plain English"
+
+[[step]]
+wait_for = ".explain-text"
+
+[[step]]
+highlight = ".callout.explain"
+seconds = 3
+
+[[step]]
 caption = "Every number is computed by code, not guessed by the model."
 
 [[step]]

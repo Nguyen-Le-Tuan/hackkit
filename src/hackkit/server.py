@@ -9,6 +9,7 @@ Endpoints (all JSON):
   GET  /api/features            every registered feature (title, inputs, sample text, ...)
   GET  /api/features/{key}      one feature
   POST /api/run/{key}           run a feature: {"text": "...", "attachments": [...]} -> result
+  POST /api/narrate/{key}       plain-English explanation of a result, numbers checked by code
   POST /api/cache/clear         forget saved model results
   *    /api/{key}/...           feature-specific routes (Feature.router)
 """
@@ -30,6 +31,7 @@ from .config import PROVIDERS, Settings
 from .export import to_json, to_markdown
 from .feature import Feature, discover
 from .llm import Attachment, LLMError, get_client
+from .narrate import narrate
 from .pipeline import RunResult, run_feature
 
 MAX_ATTACHMENT_MB = 15
@@ -40,6 +42,12 @@ class AttachmentIn(BaseModel):
     media_type: str = Field(description="MIME type, e.g. image/png or application/pdf.")
     data_b64: str = Field(description="File content, base64-encoded.")
     name: str = ""
+
+
+class NarrateRequest(BaseModel):
+    facts: dict[str, Any] = Field(description="Computed values to explain, e.g. the run's metrics.")
+    provider: str | None = None
+    demo_mode: bool | None = None
 
 
 class RunRequest(BaseModel):
@@ -59,6 +67,7 @@ def feature_info(feature: Feature) -> dict[str, Any]:
         "demo_inputs": list(feature.demo_inputs),
         "tags": list(feature.tags),
         "has_routes": feature.router is not None,
+        "has_narrative": bool(feature.narrative),
     }
 
 
@@ -82,7 +91,7 @@ def result_payload(result: RunResult) -> dict[str, Any]:
     }
 
 
-def _settings_for(base: Settings, request: RunRequest) -> Settings:
+def _settings_for(base: Settings, request: RunRequest | NarrateRequest) -> Settings:
     settings = base
     if request.provider is not None:
         provider = request.provider.strip().lower()
@@ -166,6 +175,32 @@ def create_app(
         except LLMError as exc:
             raise HTTPException(502, f"Model call failed: {exc}") from exc
         return result_payload(result)
+
+    @api.post("/narrate/{key}")
+    def explain(key: str, request: NarrateRequest) -> dict[str, Any]:
+        feature = get_feature(key)
+        if not feature.narrative:
+            raise HTTPException(404, f"Feature {key!r} has no narrative instructions")
+        run_settings = _settings_for(settings, request)
+        client = get_client(
+            run_settings, fake_responder=lambda _req: feature.sample_narrative or "No sample."
+        )
+        result = narrate(
+            client,
+            request.facts,
+            instructions=feature.narrative,
+            cache=DiskCache(run_settings.cache_dir),
+            demo_mode=run_settings.demo_mode,
+        )
+        return {
+            "text": result.text,
+            "ok": result.ok,
+            "checked": True,
+            "fallback": result.fallback,
+            "from_cache": result.from_cache,
+            "attempts": result.attempts,
+            "problems": result.problems,
+        }
 
     @api.post("/cache/clear")
     def clear_cache() -> dict[str, int]:

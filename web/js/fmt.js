@@ -1,6 +1,6 @@
 // Number and text formatting. Pure functions (no DOM), unit-tested in web/tests/.
 
-const MONEY_KEY = /(usd|cost|price|total|revenue|profit|saving|amount|incentive|budget|fee|spend)/i;
+const MONEY_KEY = /(usd|cost|price|total|revenue|profit|saving|amount|incentive|budget|fee|spend|difference|overcharge|refund)/i;
 const PCT_KEY = /(pct|percent|rate|share|ratio|margin)/i;
 
 export function isNumber(value) {

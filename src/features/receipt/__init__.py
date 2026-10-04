@@ -48,8 +48,12 @@ def rules(receipt: Receipt) -> RulesResult:
             )
         )
     summary = f"{len(receipt.items)} item(s) from {receipt.merchant or 'an unknown merchant'}."
+    metrics = {"computed_total": computed, "item_count": len(receipt.items)}
+    if receipt.stated_total is not None:
+        metrics["stated_total"] = receipt.stated_total
+        metrics["difference"] = round(receipt.stated_total - computed, 2)
     return RulesResult(
-        metrics={"computed_total": computed, "item_count": len(receipt.items)},
+        metrics=metrics,
         flags=flags,
         summary=summary,
     )
@@ -95,6 +99,15 @@ SAMPLE_RESPONSE = json.dumps(
     }
 )
 
+NARRATIVE = """Explain to the shop owner, in two sentences, whether this receipt adds up and
+what they should do about it. Mention the printed total and the computed total."""
+
+# What the fake provider says when you click "Explain" (every number is in the metrics).
+SAMPLE_NARRATIVE = (
+    "The receipt says $24.60, but the items plus tax add up to $24.56, so the customer was "
+    "overcharged by $0.04. Check the register and refund the difference."
+)
+
 FEATURE = register(
     Feature(
         key="receipt",
@@ -107,5 +120,7 @@ FEATURE = register(
         sample_text=SAMPLE_TEXT,
         sample_response=SAMPLE_RESPONSE,
         tags=("example",),
+        narrative=NARRATIVE,
+        sample_narrative=SAMPLE_NARRATIVE,
     )
 )

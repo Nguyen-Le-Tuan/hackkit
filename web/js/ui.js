@@ -209,6 +209,35 @@ export function disclosure(summary, ...body) {
   return h("details", { class: "disclosure" }, h("summary", {}, summary), body);
 }
 
+/**
+ * Plain-English question box for hackkit.ask: the model turns the question into a filter,
+ * your route runs it. onAsk(question) -> Promise<{understood: string, node: Node}>.
+ * Showing "Understood as: ..." makes the AI visible AND auditable on stage.
+ */
+export function askBox({ placeholder = "Ask in plain English…", examples = [], onAsk }) {
+  const input = h("input", { class: "input lg", type: "search", placeholder, "aria-label": "Question" });
+  const out = h("div", { class: "stack tight", "aria-live": "polite" });
+  const go = async (question = input.value) => {
+    if (!question.trim()) return;
+    input.value = question;
+    mount(out, skeleton(3));
+    try {
+      const { understood, node } = await onAsk(question);
+      mount(out, h("p", { class: "faint" }, icon("spark", 14), " Understood as: ", h("b", {}, understood)), node);
+    } catch (error) {
+      mount(out, errorState(error));
+    }
+  };
+  input.addEventListener("keydown", (event) => event.key === "Enter" && go());
+  return h(
+    "div",
+    { class: "stack" },
+    h("div", { class: "row", style: { flexWrap: "nowrap" } }, input, button("Ask", { kind: "primary", size: "lg", iconName: "search", onClick: () => go() })),
+    examples.length ? h("div", { class: "row" }, h("span", { class: "faint" }, "Try:"), examples.map((q) => h("button", { class: "chip", type: "button", onclick: () => go(q) }, q))) : null,
+    out,
+  );
+}
+
 /* ---------------------------------------------------------------- states */
 
 export function skeleton(lines = 3) {
@@ -314,14 +343,38 @@ export function dropzone({ accept = "", multiple = true, label = "Drop files her
   return zone;
 }
 
+/** True for hackkit.provenance.Sourced JSON: {"value": ..., "source": {"source": ...}}. */
+export function isSourced(value) {
+  return Boolean(value && typeof value === "object" && "value" in value && value.source && typeof value.source.source === "string");
+}
+
+/** A value with its source badge; DEMO sources are red. format(value) -> text. */
+export function sourcedView(item, format = fmt.display) {
+  const prov = item.source;
+  const demo = prov.source.trim().toLowerCase() === "demo";
+  return h(
+    "span",
+    { class: "row", style: { gap: "8px", display: "inline-flex" } },
+    h("span", { class: demo ? "demo-value" : null }, format(item.value)),
+    demo ? demoBadge() : source(prov.source, prov.confidence ?? null, prov.note || ""),
+  );
+}
+
 /** Render any JSON value as readable UI: scalars -> kv, lists of objects -> table. */
 export function dataView(value, depth = 0) {
   if (value === null || value === undefined) return h("span", { class: "faint" }, "—");
+  if (isSourced(value)) return sourcedView(value);
   if (Array.isArray(value)) {
     if (!value.length) return h("span", { class: "faint" }, "None");
     if (value.every((item) => item && typeof item === "object" && !Array.isArray(item))) {
-      const flat = value.map((item) => Object.fromEntries(Object.entries(item).map(([k, v]) => [k, v && typeof v === "object" ? JSON.stringify(v) : v])));
-      return table(flat);
+      const keys = [...new Set(value.slice(0, 20).flatMap((item) => Object.keys(item)))].slice(0, 10);
+      const columns = keys.map((key) => ({
+        key,
+        label: fmt.humanize(key),
+        num: value.every((row) => row[key] == null || fmt.isNumber(row[key]) || (isSourced(row[key]) && fmt.isNumber(row[key].value))),
+        format: (v) => (isSourced(v) ? sourcedView(v) : v && typeof v === "object" ? JSON.stringify(v) : fmt.display(v)),
+      }));
+      return table(value, columns);
     }
     return h("span", {}, value.map(fmt.display).join(", "));
   }

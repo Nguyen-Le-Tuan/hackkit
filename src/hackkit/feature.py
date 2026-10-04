@@ -39,6 +39,10 @@ class Feature:
     router: Any = None
     # GET paths under /api/ that `make snapshot` saves too, e.g. ("/api/<key>/top?n=10",).
     snapshot_paths: tuple[str, ...] = field(default_factory=tuple)
+    # Optional "Explain" button: instructions for hackkit.narrate (the AI explains the result in
+    # plain English; every number it writes is checked against the computed values).
+    narrative: str = ""
+    sample_narrative: str = ""  # what the fake provider says, so the button works offline
 
 
 REGISTRY: dict[str, Feature] = {}

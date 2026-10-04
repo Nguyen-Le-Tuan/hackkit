@@ -43,8 +43,8 @@ eval:   ## score every labeled case file; writes evals/results/<name>.md
 	  python -m hackkit.evals "$$f" --out "evals/results/$$(basename $$f .jsonl).md" || exit 1; \
 	done
 
-feature: ## make feature NAME=intake_triage TITLE="Intake triage"
-	python -m hackkit.scaffold $(NAME) "$(TITLE)"
+feature: ## make feature NAME=intake_triage TITLE="Intake triage" [PAGE=1]: feature + test + eval (+ web page)
+	python -m hackkit.scaffold $(NAME) "$(TITLE)" $(if $(PAGE),--page)
 
 docker:
 	docker build -t hackkit . && docker run --rm -p 8000:8000 --env-file .env hackkit
