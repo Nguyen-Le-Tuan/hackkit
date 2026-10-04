@@ -59,7 +59,7 @@ pushed for review). `T1~` = soft dependency (can start now, can only finish afte
 | ID | Task | Owner | Files it may touch | Depends on | Status |
 |----|------|-------|--------------------|------------|--------|
 | T0 | Pitch kit from minute 0: `make init-project`, rubric map + timeline in `docs/pitch/README.md`, deck v0 (titles only), find ONE sourced impact number | human-C | `web/config.json`, `docs/pitch/`, `docs/SUBMISSION.md`, `README.md` | - | todo |
-| T1 | Registered feature skeleton: `make feature NAME=<key>`, schema, instructions, sample text and response, stub `rules()` (this becomes the Contract; open the PR within ~10 min) | claude | `src/features/<key>/`, `tests/test_<key>.py`, `evals/cases/<key>.jsonl` | - | todo |
+| T1 | Registered feature skeleton: `make feature NAME=<key> PAGE=1`, schema, instructions, sample text and response, stub `rules()`, then `make remove-example` (this becomes the Contract; open the PR within ~10 min) | claude | `src/features/`, `tests/test_<key>.py`, `evals/cases/`, `web/snapshots/`, `web/js/pages/`, `docs/pitch/shots.toml`, `docs/pitch/demo_flow.toml` | - | todo |
 | T2 | `rules()` + unit tests for the checks listed in `docs/spec.md` (+ golden tests if the partner gave a worked example) | claude | `src/features/<key>/__init__.py`, `tests/test_<key>.py` | T1 | todo |
 | T3 | Synthetic data + 3 labeled eval cases, then `make eval` | codex | `evals/cases/<key>.jsonl`, `data/synthetic/` | T1~ | todo |
 | T4 | Visible AI in the demo flow: `narrative` (Explain button) or an `ask` route + page | codex | `src/features/<key>/`, `web/js/pages/` | T2 | todo |

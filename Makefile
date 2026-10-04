@@ -1,5 +1,5 @@
 .PHONY: setup run demo web snapshot web-test test lint fmt eval feature docker lanes \
-	shots deck demo-video pitch pages init-project
+	shots deck demo-video pitch pages init-project remove-example
 
 PORT ?= 8000
 HOST ?= 127.0.0.1
@@ -106,6 +106,9 @@ pitch:  ## shots, then deck, then demo video
 
 pages:  ## publish web/ + snapshots as a static "Try it" site on GitHub Pages
 	$(HK_PY) scripts/pages.py
+
+remove-example: ## drop the receipt example once your feature works: make remove-example [FEATURE=key]
+	$(HK_PY) scripts/remove_example.py $(if $(FEATURE),--feature $(FEATURE))
 
 init-project: ## make init-project NAME="My App" TAGLINE="..." [TEAM="..."] [EVENT="..."]
 	@if [ -z "$(NAME)" ] || [ -z "$(TAGLINE)" ]; then echo 'usage: make init-project NAME="My App" TAGLINE="One line" [TEAM="Team · names"] [EVENT="Hackathon 2026"]'; exit 2; fi

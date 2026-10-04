@@ -34,7 +34,7 @@ The full runbook (Vietnamese) is [docs/DAY_OF.md](docs/DAY_OF.md). The spine:
 gh repo create <name> --template Nguyen-Le-Tuan/hackkit --private --clone && cd <name> && make setup
 ./scripts/orchestrate.sh --now --transcript docs/<problem>.txt --document   # agents brief + plan the challenges
 make init-project NAME="My App" TAGLINE="One line" TEAM="Team · names"      # your name everywhere, product README
-make feature NAME=my_feature TITLE="My feature" PAGE=1                      # feature + test + eval + page
+make feature NAME=my_feature TITLE="My feature" PAGE=1 && make remove-example   # your feature replaces the example
 make lanes                                    # who does what, what runs in parallel, which milestone is late
 make verify PR=12                             # merge only on "VERDICT: MERGE OK"
 make snapshot && make pages                   # offline copy + public "Try it" site
@@ -69,8 +69,10 @@ make feature NAME=intake_triage TITLE="Intake triage" PAGE=1
 3. Paste a realistic `sample_text` and `sample_response`. The feature appears at
    `#/feature/intake_triage` with input, file drop, results, flags, an Explain button and downloads.
 
-`src/features/receipt/` is the reference: the model lists the items, code adds them up, flags the
-4-cent mismatch, and the Explain button writes a sentence whose numbers are all verified.
+`src/features/receipt/` is only the reference example (so everything runs on day one): the model
+lists the items, code adds them up, flags the 4-cent mismatch, and the Explain button writes a
+sentence whose numbers are all verified. Once your feature works, `make remove-example` deletes it
+everywhere and points the screenshots and the demo video at your feature.
 
 ## AI judges can see, numbers they can trust
 

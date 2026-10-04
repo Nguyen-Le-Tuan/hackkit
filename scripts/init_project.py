@@ -178,6 +178,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print("init-project: updated " + ", ".join(changed))
     print("Next: edit web/config.json (impact numbers!), docs/pitch/deck.toml, then `make shots`.")
+    print("When your feature works: `make remove-example` drops the receipt example everywhere.")
     return 0
 
 

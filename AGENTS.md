@@ -25,6 +25,7 @@ Code reads it through `CLAUDE.md` (`@AGENTS.md`). Agents PREPARE and BUILD; huma
   `js/map.js` (MapLibre 3D map, SVG fallback), `js/chart.js` (Chart.js, SVG fallback), generic
   feature page (`#/feature/<key>`), `#/doctor`. Branding and home page text: `web/config.json`.
 - `src/features/receipt/`: reference example of the feature pattern (incl. an Explain narrative).
+  Teams delete it with `make remove-example` once their own feature works; tests that use it skip.
 - Pitch tools (`docs/pitch/README.md`): `make shots`, `make deck`, `make demo-video`, `make pages`.
 - Guards (`hackkit.toml`): pre-commit `scripts/guard.py`, `make verify PR=N`, `make freeze`, `make doctor`.
 - `scripts/orchestrate.sh` (kickoff -> planning docs in `docs/agent/`), `scripts/lanes.py` (`make lanes`

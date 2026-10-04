@@ -143,6 +143,8 @@ mềm `T1~`; việc song song sửa file KHÁC nhau). Giữ nguyên bảng Team 
 make lanes && git add -A && git commit -m "docs: spec, tasks, milestones" && git push origin main
 ```
 - [ ] `make lanes` không có `⚠`. Gửi "Tin nhắn cho nhóm chat" ở **mục 6** cho cả đội.
+- Feature mẫu **receipt** chỉ để template chạy được từ đầu. Khi feature của đội chạy (T1):
+  `make remove-example` xóa nó ở mọi chỗ và trỏ ảnh chụp, video sang feature của đội.
 
 **5.6 Điền khóa** (chỉ khi `STATUS.md` có `DONE` và Secret scan `clean`; khóa không hiện ra màn hình):
 ```bash

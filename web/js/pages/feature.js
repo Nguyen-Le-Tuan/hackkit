@@ -103,6 +103,12 @@ function provenance(payload, ms) {
 }
 
 export function renderResult(feature, payload, ms = 0, inputText = "") {
+  const node = resultCard(feature, payload, ms, inputText);
+  node.dataset.result = payload.ok ? "ok" : "error"; // scripts (shots, demo video) wait for [data-result]
+  return node;
+}
+
+function resultCard(feature, payload, ms, inputText) {
   if (!payload.ok) {
     return card(
       { title: "Result", actions: provenance(payload, ms) },
