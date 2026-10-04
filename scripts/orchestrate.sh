@@ -455,7 +455,7 @@ run_step() {
 
 # ---------------- PROMPTS ----------------
 read -r -d '' CTX <<'EOF'
-Context: you are one of two AI agents (Claude Code and Codex) helping a 3-person student team at a one-day hackathon. Agents PREPARE; humans DECIDE. Read CLAUDE.md and README.md first: this repo is the hackkit template, so the infrastructure already exists (LLM providers, extraction with validation, cache, demo mode, HttpConnector, Streamlit shell, evals, feature scaffold). Work only inside this repository. Do not run git. Do not write code: this task produces planning documents in docs/agent/ only. Be concise.
+Context: you are one of two AI agents (Claude Code and Codex) helping a 3-5 person student team at a one-day hackathon. Agents PREPARE; humans DECIDE. Read CLAUDE.md and README.md first: this repo is the hackkit template, so the infrastructure already exists (LLM providers, extraction with validation, cache, demo mode, HttpConnector, FastAPI + plain HTML/CSS/JS web UI kit with maps and charts, static offline mode, narrate (AI explains, code checks every number), ask (plain-English question -> filter -> deterministic query), provenance badges, golden tests, evals, feature scaffold, and pitch tools: screenshots, slide deck, captioned demo video, Devpost template). Judges score what they SEE in a 3-5 minute pitch: the problem, the impact, the visible AI and a demo with no mistakes. Work only inside this repository. Do not run git. Do not write code: this task produces planning documents in docs/agent/ only. Be concise.
 EOF
 
 read -r -d '' P1 <<'EOF'
@@ -484,12 +484,18 @@ Then write docs/agent/PLANS.md with one plan per challenge, for a team with abou
 - the one novel feature that other teams are unlikely to build;
 - sample_text / sample_response idea and 3 eval cases (public or synthetic data only);
 - at most 6 ordered tasks; top 3 risks; 3 questions to ask the partner before building.
+- WINNING (required for every plan):
+  * rubric map: each judging criterion (with its weight if stated) -> the feature or demo moment that scores it;
+  * the judge's first 10 seconds: what is on screen and the one sentence said;
+  * one impact number to show, and where it will come from (partner, public source, or our own measurement; never invented);
+  * where the AI is VISIBLE in the main demo flow (extract / narrate / ask), while code still owns every number;
+  * prize tracks / sponsor technologies the plan qualifies for, and what using each one would take.
 If the assignment is known, put that plan first and mark it ASSIGNED.
 EOF
 
 read -r -d '' P4 <<'EOF'
 Task 4 (plan review). Read docs/agent/BRIEF.md, docs/agent/PLANS.md, CLAUDE.md and README.md. Do NOT edit them.
-Write docs/agent/PLAN_REVIEW.md: for each plan, what is over-scoped for 5 hours, what duplicates something hackkit already provides, what is missing, and a recommended cut-down version (max 4 tasks). End with a 5-line checklist for the humans to read first.
+Write docs/agent/PLAN_REVIEW.md: for each plan, what is over-scoped for 5 hours, what duplicates something hackkit already provides, what is missing, and a recommended cut-down version (max 4 tasks), and whether the plan's demo would score on EVERY judging criterion (say which criterion is weakest and the cheapest fix). End with a 5-line checklist for the humans to read first.
 EOF
 
 # ---------------- SOURCE / CHOICE NOTES ----------------

@@ -5,9 +5,10 @@ Run `make lanes` (or `python scripts/lanes.py`) after you edit docs/TASKS.md. To
 status in one command: `make lanes SET="T1=merged T2=doing"`. It rewrites ONLY the text between the LANES markers in the guide, so the rest of the
 guide (and any boxes you ticked) is left alone. Standard library only.
 
-TASKS.md must contain two tables:
+TASKS.md must contain two tables, and may contain a third:
   * Team  : columns Role | Person | Tool        (maps `claude`, `codex`, `human-A`... to people)
   * Tasks : columns ID | Task | Owner | Files it may touch | Depends on | Status
+  * Milestones (optional): columns Milestone | Due (HH:MM) | Done (yes/no); late ones get a warning
 `Depends on` lists task ids; an id ending in `~` is a SOFT dependency (the task may start now
 but can only finish after that task is merged).
 """
@@ -28,7 +29,7 @@ DONE, ACTIVE = "merged", ("doing", "review")
 ROLE_NOTES = {
     "human-a": "điều phối, review và merge PR",
     "human-b": "QA, chạy demo",
-    "human-c": "pitch, Devpost",
+    "human-c": "pitch, UX, Devpost (từ phút 0)",
     "claude": "agent",
     "codex": "agent",
     "partner-qa": "hỏi đối tác",
@@ -75,6 +76,55 @@ class Member:
     def launcher(self) -> str:
         low = self.tool.lower()
         return "claude" if "claude" in low else "codex" if "codex" in low else ""
+
+
+@dataclass
+class Milestone:
+    name: str
+    due: str  # "HH:MM", or "" when the team has not set it yet
+    done: bool
+
+
+def parse_milestones(tables: list[list[list[str]]]) -> list[Milestone]:
+    for table in tables:
+        header = [c.lower() for c in table[0]]
+        if header and ("milestone" in header[0] or "mốc" in header[0]):
+            d, x = column(table[0], "due", "hạn"), column(table[0], "done", "xong")
+            return [
+                Milestone(
+                    row[0].replace("`", "").strip(),
+                    row[d].strip(),
+                    row[x].strip().lower() in {"yes", "y", "x", "[x]", "done", "rồi", "xong", "✅"},
+                )
+                for row in table[1:]
+                if row and row[0].strip() and len(row) > max(d, x)
+            ]
+    return []
+
+
+def milestone_lines(milestones: list[Milestone], now: datetime) -> tuple[list[str], list[str]]:
+    """(warnings for the top of the block, the milestone table)."""
+    if not milestones:
+        return [], []
+    warnings, rows = [], ["### Mốc thời gian", "", "| Mốc | Hạn | Trạng thái |", "|---|---|---|"]
+    for m in milestones:
+        if m.done:
+            status = "✅ xong"
+        elif not re.fullmatch(r"\d{1,2}:\d{2}", m.due):
+            status = "— chưa đặt giờ (điền HH:MM vào docs/TASKS.md)"
+        else:
+            hh, mm = (int(x) for x in m.due.split(":"))
+            delta = (now.replace(hour=hh, minute=mm, second=0, microsecond=0) - now).total_seconds()
+            minutes = int(abs(delta) // 60)
+            if delta < 0:
+                status = f"⚠ **TRỄ {minutes} phút**"
+                warnings.append(
+                    f"> ⚠ Trễ mốc **{m.name}** ({m.due}): cắt bớt phạm vi, đừng dời mốc."
+                )
+            else:
+                status = f"⏳ còn {minutes} phút"
+        rows.append(f"| {m.name} | {m.due or '—'} | {status} |")
+    return warnings, [*rows, ""]
 
 
 def parse_tables(text: str) -> list[list[list[str]]]:
@@ -233,6 +283,10 @@ def build(tasks_md: str, now: datetime | None = None) -> str:
         if t.role not in team:
             out.append(f"> ⚠ {t.id}: vai trò `{t.role or '(trống)'}` chưa có trong bảng Team.")
         out += [f"> ⚠ {t.id}: {n}" for n in t.notes]
+    late, milestone_table = milestone_lines(parse_milestones(tables), now)
+    out += late
+    if milestone_table:
+        out += ["", *milestone_table]
 
     # --- people ---
     out += [
@@ -369,7 +423,7 @@ def build(tasks_md: str, now: datetime | None = None) -> str:
                     f"Đọc AGENTS.md, docs/spec.md và docs/TASKS.md. Chỉ làm task {t.id}: {t.title}. "
                     f"Chỉ sửa các file: {files}. Tuân thủ đúng phần Contract trong docs/TASKS.md."
                     f"{soft} Chạy pytest và ruff check . rồi commit nhỏ; xong thì dừng và báo kết quả. "
-                    "Không merge, không push lên main.",
+                    "Không merge, không push lên main. PR (nếu mở) luôn nhắm vào main, không nhắm vào nhánh khác.",
                     "```",
                     "Khi agent báo xong:",
                     "```bash",
@@ -404,10 +458,12 @@ def build(tasks_md: str, now: datetime | None = None) -> str:
         "",
         "```bash",
         "gh pr list",
-        "gh pr checks <số PR> --watch        # chỉ merge khi xanh",
+        "make verify PR=<số PR>              # gộp thử + guard + lint + test + smoke; cần 'MERGE OK'",
+        "gh pr checks <số PR> --watch        # CI cũng phải xanh",
         "gh pr merge <số PR> --merge",
-        "git switch main && git pull origin main && make test && make lint",
+        "git switch main && git pull origin main",
         "```",
+        "`make verify` báo PR không nhắm vào `main`? Sửa: `gh pr edit <số PR> --base main`.",
         f"PR bị lạc hậu so với main? `gh api -X PUT repos/{owner}/{repo}/pulls/<số PR>/update-branch`, "
         "hoặc người làm chạy `git fetch origin && git merge origin/main && git push`.",
         "",

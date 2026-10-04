@@ -150,3 +150,40 @@ def test_backup_integrator_and_partner_qa_are_shown_when_in_the_team_table():
     assert "partner-qa (hỏi đối tác)" in block
     assert "Người merge dự phòng khi tôi bận: Anh-08" in block
     assert "Người merge dự phòng" not in lanes.build(tasks_md())
+
+
+def test_milestones_warn_when_late_and_count_down_otherwise():
+    from datetime import datetime
+
+    md = """
+| Role | Person | Tool |
+|---|---|---|
+| claude | Ana | Claude Code |
+
+| Milestone | Due (HH:MM) | Done |
+|---|---|---|
+| Ugly end-to-end deployed | 10:00 | no |
+| Slides v1 with real screenshots | 13:00 | |
+| Kickoff | 09:00 | yes |
+
+| ID | Task | Owner | Files it may touch | Depends on | Status |
+|---|---|---|---|---|---|
+| T1 | x | claude | a.py | - | todo |
+"""
+    block = lanes.build(md, datetime(2026, 10, 3, 11, 30))
+    assert "Trễ mốc **Ugly end-to-end deployed** (10:00)" in block
+    assert "| Slides v1 with real screenshots | 13:00 | ⏳ còn 90 phút |" in block
+    assert "| Kickoff | 09:00 | ✅ xong |" in block
+
+
+def test_integrator_block_uses_make_verify():
+    md = """
+| Role | Person | Tool |
+|---|---|---|
+| human-A | Bo | |
+
+| ID | Task | Owner | Files it may touch | Depends on | Status |
+|---|---|---|---|---|---|
+| T1 | x | human-A | a.py | - | todo |
+"""
+    assert "make verify PR=<số PR>" in lanes.build(md)
