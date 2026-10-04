@@ -2,11 +2,13 @@ import json
 
 import pytest
 
-from features.receipt import FEATURE as RECEIPT
 from hackkit.export import to_json, to_markdown
 from hackkit.feature import REGISTRY, discover
 from hackkit.llm import FakeClient
 from hackkit.pipeline import run_feature
+
+# The reference example; teams may delete it, and then these tests step aside.
+RECEIPT = pytest.importorskip("features.receipt").FEATURE
 
 
 def test_discover_finds_example_feature():

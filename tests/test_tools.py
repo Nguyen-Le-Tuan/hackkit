@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from hackkit.config import Settings
 from hackkit.evals import run_eval, values_match
 from hackkit.scaffold import create_extras, create_feature
@@ -11,6 +13,7 @@ def test_values_match_tolerates_small_number_differences():
 
 
 def test_eval_scores_fields(tmp_path):
+    pytest.importorskip("features.receipt")
     cases = tmp_path / "cases.jsonl"
     cases.write_text(
         json.dumps(

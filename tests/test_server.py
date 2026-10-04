@@ -7,6 +7,9 @@ from hackkit.config import Settings
 from hackkit.feature import discover
 from hackkit.server import create_app
 
+# Uses the receipt reference example; skipped if a team deletes it.
+pytest.importorskip("features.receipt")
+
 
 @pytest.fixture
 def client(tmp_path):

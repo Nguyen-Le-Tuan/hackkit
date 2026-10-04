@@ -27,9 +27,15 @@ def test_shots_config_rejects_duplicate_names(tmp_path):
         shots.load_shots(config)
 
 
-def test_template_shots_config_is_valid():
-    defaults, items = shots.load_shots(ROOT / "docs" / "pitch" / "shots.toml")
-    assert defaults["sizes"] and {s["name"] for s in items} >= {"home", "feature-result"}
+def test_project_shots_config_is_valid():
+    """The team edits shots.toml; it must stay loadable (names unique, sizes parse)."""
+    config = ROOT / "docs" / "pitch" / "shots.toml"
+    if not config.exists():
+        pytest.skip("no shots.toml in this project")
+    defaults, items = shots.load_shots(config)
+    for item in items:
+        for size in item.get("sizes", defaults.get("sizes", ["1440x900"])):
+            assert shots.parse_size(size)
 
 
 def test_unknown_step_is_reported_without_a_browser():
@@ -83,34 +89,60 @@ notes = "x"
     assert "words on the slide" in text and "bullets" in text and "slot is 0.5 min" in text
 
 
-def test_template_deck_has_no_warnings():
+def test_project_deck_builds(tmp_path):
+    """The team edits deck.toml all day: it must always build (warnings are advice, not errors)."""
     pytest.importorskip("pptx")
     import deck
 
-    _, report = deck.build(ROOT / "docs" / "pitch" / "deck.toml", Path("/tmp/hackkit-deck-test"))
-    missing = [w for w in report.warnings if "image not found" not in w]
-    assert missing == [] and report.seconds <= 240
+    config = ROOT / "docs" / "pitch" / "deck.toml"
+    if not config.exists():
+        pytest.skip("no deck.toml in this project")
+    path, _ = deck.build(config, tmp_path)
+    assert path.exists()
 
 
-def test_init_project_renames_everything(tmp_path, monkeypatch):
-    for rel in ("web/config.json", "web/index.html", "docs/pitch/deck.toml",
-                "docs/pitch/demo_flow.toml", "docs/SUBMISSION.md", "README.md"):  # fmt: skip
-        target = tmp_path / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text((ROOT / rel).read_text(encoding="utf-8"), encoding="utf-8")
-    if not (tmp_path / "README.md").read_text().startswith("# hackkit"):
-        (tmp_path / "README.md").write_text("# hackkit\n\ntemplate readme\n")
+TEMPLATE_FILES = {
+    "web/config.json": '{"name": "hackkit", "tagline": "Messy input in, checked answers out",'
+    ' "hero": {}, "links": {}}',
+    "web/index.html": '<title>hackkit</title><meta name="description" content="x">',
+    "docs/pitch/deck.toml": 'footer = "hackkit · Team NAME"\ntitle = "hackkit"\n'
+    'subtitle = "Messy input in, checked answers out."\nteam = "Team NAME · Ana, Bo, Chi, Dan"\n',
+    "docs/pitch/demo_flow.toml": 'title = "hackkit"\n'
+    'subtitle = "Messy input in, checked answers out"\n',
+    "docs/SUBMISSION.md": "# Devpost submission (draft)\n",
+    "README.md": "# hackkit\n\ntemplate readme\n",
+}
+
+
+def _init(tmp_path, monkeypatch, *args):
     monkeypatch.setattr(init_project, "ROOT", tmp_path)
     monkeypatch.setattr(init_project, "git_remote_pages_url", lambda: "https://me.github.io/app/")
-    init_project.main(
-        ["--name", "Acme Check", "--tagline", "Fast checks", "--team", "Team X · A, B"]
-    )
+    init_project.main(list(args))
+
+
+def test_init_project_renames_everything_and_can_be_rerun(tmp_path, monkeypatch):
+    for rel, text in TEMPLATE_FILES.items():
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / rel).write_text(text, encoding="utf-8")
+    _init(tmp_path, monkeypatch, "--name", "Acme Check", "--tagline", "Fast checks",
+          "--team", "Team X · A, B")  # fmt: skip
 
     config = json.loads((tmp_path / "web/config.json").read_text())
     assert config["name"] == "Acme Check" and config["hero"]["title"] == "Fast checks"
     assert "<title>Acme Check</title>" in (tmp_path / "web/index.html").read_text()
     deck_text = (tmp_path / "docs/pitch/deck.toml").read_text()
-    assert 'title = "Acme Check"' in deck_text and "Team X" in deck_text
+    assert 'title = "Acme Check"' in deck_text and 'team = "Team X · A, B"' in deck_text
+    assert (
+        'subtitle = "Fast checks."' in deck_text and 'footer = "Acme Check · Team X"' in deck_text
+    )
     readme = (tmp_path / "README.md").read_text()
     assert readme.startswith("# Acme Check") and "https://me.github.io/app/" in readme
+    assert (tmp_path / "docs/HACKKIT.md").read_text().startswith("# hackkit")
+
+    # A second run (new name, new team) updates everything again.
+    _init(tmp_path, monkeypatch, "--name", "Acme Pro", "--tagline", "Faster checks",
+          "--team", "Team Y · C")  # fmt: skip
+    deck_text = (tmp_path / "docs/pitch/deck.toml").read_text()
+    assert 'title = "Acme Pro"' in deck_text and 'team = "Team Y · C"' in deck_text
+    assert 'footer = "Acme Pro · Team Y"' in deck_text and "Team X" not in deck_text
     assert (tmp_path / "docs/HACKKIT.md").read_text().startswith("# hackkit")

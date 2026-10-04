@@ -7,7 +7,7 @@ WEB_PORT ?= 8600
 UVICORN = uvicorn --factory hackkit.server:create_app --host $(HOST) --port $(PORT)
 
 setup:  ## create venv and install everything
-	python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" && (cp -n .env.example .env || true) && $(MAKE) --no-print-directory hooks
+	python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]" && ([ -f .env ] || cp .env.example .env) && $(MAKE) --no-print-directory hooks
 
 run:    ## API + web UI on http://localhost:8000 with the provider from .env (auto-reload); HOST=0.0.0.0 for LAN
 	@echo "Open http://localhost:$(PORT)  (API docs: /api/docs, demo check: /#/doctor)"

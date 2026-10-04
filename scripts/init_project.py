@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+TEMPLATE_TEAM = "Team NAME · Ana, Bo, Chi, Dan"
 
 README = """# {name}
 
@@ -111,8 +112,11 @@ def main(argv: list[str] | None = None) -> int:
     config = json.loads(config_path.read_text(encoding="utf-8"))
     old_name = config.get("name", "hackkit")
     old_tagline = config.get("tagline", "")
+    old_team = config.get("team", TEMPLATE_TEAM)
     config["name"] = args.name
     config["tagline"] = args.tagline
+    config["team"] = args.team
+    config["event"] = args.event
     hero = config.setdefault("hero", {})
     hero["eyebrow"] = args.event if args.event != "the hackathon" else hero.get("eyebrow", "")
     hero["title"] = args.tagline
@@ -143,8 +147,8 @@ def main(argv: list[str] | None = None) -> int:
         hit |= replace_in(path, f"{old_name} ·", f"{args.name} ·")
         if old_tagline:
             hit |= replace_in(path, old_tagline, args.tagline)
-        hit |= replace_in(path, "Team NAME · Ana, Bo, Chi, Dan", args.team)
-        hit |= replace_in(path, "Team NAME", args.team.split(" · ")[0])
+        hit |= replace_in(path, old_team, args.team)  # the previous run's team (or the template's)
+        hit |= replace_in(path, old_team.split(" · ")[0], args.team.split(" · ")[0])
         if hit:
             changed.append(rel)
 

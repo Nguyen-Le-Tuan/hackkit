@@ -8,6 +8,9 @@ import pytest
 from hackkit.config import Settings
 from hackkit.snapshot import build_snapshot, snapshot_name
 
+# Uses the receipt reference example; skipped if a team deletes it.
+pytest.importorskip("features.receipt")
+
 SHARED = Path(__file__).resolve().parents[1] / "web" / "tests" / "snapshot_names.json"
 
 

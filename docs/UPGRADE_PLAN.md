@@ -7,8 +7,8 @@ Giải thích viết bằng tiếng Việt; code, lệnh và tên file viết b�
 
 ---
 
-> **Trạng thái (2026-10-03):** P0–P5 đã làm xong và merge vào `main` (PR #1–#6). P6 (diễn tập) đã chạy thử
-> một lượt tự động trên bản clone mới; buổi diễn tập 5 giờ với cả đội vẫn là việc của đội trước giải lớn.
+> **Trạng thái (2026-10-03):** P0–P6 đã làm xong và merge vào `main` (PR #1–#7). P6 là diễn tập tự động trên
+> bản clone mới; buổi diễn tập 5 giờ với cả đội vẫn là việc của đội trước giải lớn.
 > Kết quả từng giai đoạn: xem lịch sử PR trên GitHub và mục "Đã làm" ở cuối file.
 
 ## 0. Mục tiêu và nguyên tắc
@@ -213,3 +213,27 @@ trước/sau cho phần UI.
 | #4 | P2 | `make shots`, `make deck`, `make demo-video`, `make pages`, `make init-project`, kit pitch, CI e2e |
 | #5 | P4 | `provenance`, `narrate` + nút Explain, `ask` + askBox, `golden`, scaffold đủ bộ |
 | #6 | P5 | DAY_OF mới, TASKS có mốc giờ + T0 pitch, `make lanes` báo trễ, AGENTS/README/spec, orchestrate đòi rubric map |
+| #7 | P6 | Sửa các lỗi diễn tập tìm ra (xem bên dưới) |
+
+### Diễn tập tự động P6 (bản clone mới từ GitHub, provider `fake`)
+
+| Bước | Thời gian | Kết quả |
+|---|---|---|
+| `git clone` + `make setup` (cài hook) | 7 s | OK |
+| `make init-project` + `make feature NAME=bill_check PAGE=1` | 3 s | OK; test sinh ra pass |
+| `make test` sau khi đội tùy biến | 3 s | **Lỗi → đã sửa**: test template phụ thuộc nội dung mẫu |
+| `pip install -e ".[pitch]"` | 3 s | OK (Chromium đã có sẵn trong cache) |
+| `make snapshot` / `shots --smoke` / `make shots` / `make deck` | 0 / 11 / 14 / 2 s | OK; **smoke bỏ sót trang mới → đã sửa** |
+| `make demo-video` | 30 s | **Lỗi → đã sửa**: kịch bản phụ thuộc chữ trên nút, chờ 30 s mới báo |
+| Commit file `.xlsx` vào `docs/` | — | Bị hook chặn, hướng dẫn chuyển sang `partner/` |
+| `make verify BRANCH=task/t1` / `make lanes` / `make doctor` | 4 / 0 / 1 s | MERGE OK / OK / 0 FAIL |
+
+Lỗi tìm ra và cách sửa:
+- `init-project` chạy lần hai không đổi tên đội: lưu `team`/`event` vào `config.json`, lần sau thay đúng giá trị cũ.
+- Test của template gãy khi đội sửa slide, đổi tên ảnh hoặc xóa ví dụ receipt: test giờ chỉ kiểm tra file của đội
+  còn dựng được; test dùng receipt tự bỏ qua khi receipt bị xóa. CI không đỏ vì tùy biến hợp lệ.
+- Smoke test giờ tự kiểm tra mọi trang trên thanh điều hướng (trang tùy chỉnh thêm trong ngày thi).
+- Kịch bản video mẫu dùng route thay cho chữ trên nút; mỗi bước hỏng báo lỗi sau 10 s, nêu đúng bước.
+- `make setup` bỏ `cp -n` (cảnh báo trên coreutils mới).
+
+Còn lại cho đội: diễn tập 5 giờ với một đề Devpost cũ, đủ người, đo các mốc trong `docs/TASKS.md`.
