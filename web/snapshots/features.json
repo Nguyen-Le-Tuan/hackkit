@@ -13,6 +13,7 @@
     "tags": [
       "example"
     ],
-    "has_routes": false
+    "has_routes": false,
+    "has_narrative": true
   }
 ]

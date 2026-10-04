@@ -2,7 +2,7 @@ import json
 
 from hackkit.config import Settings
 from hackkit.evals import run_eval, values_match
-from hackkit.scaffold import create_feature
+from hackkit.scaffold import create_extras, create_feature
 
 
 def test_values_match_tolerates_small_number_differences():
@@ -31,3 +31,19 @@ def test_scaffold_creates_a_valid_feature(tmp_path):
     source = path.read_text()
     assert 'key="intake_triage"' in source and "class IntakeTriageResult" in source
     compile(source, str(path), "exec")
+
+
+def test_scaffold_extras_write_test_eval_and_page(tmp_path):
+    pages = tmp_path / "web" / "js" / "pages"
+    pages.mkdir(parents=True)
+    (pages / "index.js").write_text("// registry\nexport const pages = [];\n")
+    created = create_extras("intake_triage", "Intake triage", tmp_path, page=True)
+    names = {p.name for p in created}
+    assert {"test_intake_triage.py", "intake_triage.jsonl", "intake_triage.js", "index.js"} <= names
+    compile((tmp_path / "tests" / "test_intake_triage.py").read_text(), "t.py", "exec")
+    case = json.loads((tmp_path / "evals" / "cases" / "intake_triage.jsonl").read_text())
+    assert case["feature"] == "intake_triage"
+    registry = (pages / "index.js").read_text()
+    assert 'import * as intake_triage from "./intake_triage.js";' in registry
+    assert 'path: "/intake_triage"' in registry
+    assert create_extras("intake_triage", "Intake triage", tmp_path, page=True) == []  # idempotent

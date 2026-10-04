@@ -93,3 +93,16 @@ def test_feature_routes_are_mounted_and_keys_are_checked(tmp_path):
     assert TestClient(app).get("/api/custom/hello").json() == {"hi": True}
     with pytest.raises(ValueError, match="clashes"):
         create_app(Settings(), features={"run": replace(receipt, key="run")}, web_dir=tmp_path)
+
+
+def test_narrate_explains_with_checked_numbers(client):
+    receipt = client.get("/api/features/receipt").json()
+    assert receipt["has_narrative"]
+    run = client.post("/api/run/receipt", json={"text": receipt["sample_text"]}).json()
+    assert run["metrics"]["difference"] == 0.04
+    body = client.post("/api/narrate/receipt", json={"facts": {"metrics": run["metrics"]}}).json()
+    assert body["ok"] and not body["fallback"] and "$24.56" in body["text"]
+
+
+def test_narrate_rejects_features_without_a_narrative(client):
+    assert client.post("/api/narrate/nope", json={"facts": {}}).status_code == 404

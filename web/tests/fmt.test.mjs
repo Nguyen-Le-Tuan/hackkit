@@ -32,3 +32,7 @@ test("display handles every JSON type", () => {
   assert.equal(fmt.display(1234.5), "1,235");
   assert.equal(fmt.display({ a: 1 }), '{"a":1}');
 });
+
+test("difference-like keys are money", () => {
+  assert.equal(fmt.metric("difference", 0.04), "$0.04");
+});

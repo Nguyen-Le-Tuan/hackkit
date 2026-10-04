@@ -45,6 +45,8 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 "scripts/lanes.py" = ["E501"]
 # browser_steps.py embeds the JS/CSS overlay injected into recorded pages.
 "scripts/browser_steps.py" = ["E501"]
+# scaffold.py holds code templates (Python and JS) as strings.
+"src/hackkit/scaffold.py" = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["hackkit", "features"]

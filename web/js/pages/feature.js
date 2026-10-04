@@ -71,7 +71,7 @@ export async function render({ params }) {
     try {
       const attachments = await Promise.all(files.map(async (f) => ({ name: f.name, media_type: f.type || "application/octet-stream", data_b64: await fileToBase64(f) })));
       const payload = await api.run(feature.key, { text: textarea.value, attachments });
-      mount(result, renderResult(feature, payload, performance.now() - started));
+      mount(result, renderResult(feature, payload, performance.now() - started, textarea.value));
     } catch (error) {
       mount(result, card({ title: "Result" }, errorState(error, button("Try again", { onClick: () => run() }))));
     } finally {
@@ -102,7 +102,7 @@ function provenance(payload, ms) {
   return badge(`${fmt.plural(payload.attempts, "model call")} · ${fmt.duration(ms)}`, "accent");
 }
 
-export function renderResult(feature, payload, ms = 0) {
+export function renderResult(feature, payload, ms = 0, inputText = "") {
   if (!payload.ok) {
     return card(
       { title: "Result", actions: provenance(payload, ms) },
@@ -126,10 +126,18 @@ export function renderResult(feature, payload, ms = 0) {
       "div",
       { class: "stack loose fade-in" },
       payload.summary ? h("h3", {}, payload.summary) : null,
-      metricEntries.length ? metrics(metricEntries.map(([key, value]) => metricTile(fmt.humanize(key), fmt.metric(key, value), { foot: h("span", {}, "computed by code") }))) : null,
+      metricEntries.length
+        ? h(
+            "div",
+            { class: "stack tight" },
+            h("p", { class: "faint" }, "From the feature's rules: deterministic code over the extracted data (no model)."),
+            metrics(metricEntries.map(([key, value]) => metricTile(fmt.humanize(key), fmt.metric(key, value)))),
+          )
+        : null,
       payload.flags.length
         ? h("div", { class: "stack tight" }, h("h4", {}, "Needs human review"), payload.flags.map((f) => callout("warn", f.field === "*" ? "Overall" : fmt.humanize(f.field), f.reason)))
         : callout("good", "Nothing flagged.", "The code checks passed."),
+      feature.has_narrative ? explainBox(feature, payload, inputText) : null,
       tabs([
         { label: "Data", render: () => h("div", { class: "stack" }, fmt.isNumber(confidence) ? h("p", { class: "faint" }, `Model confidence: ${fmt.pct(confidence, 0)}`) : null, dataView(data)) },
         { label: "JSON", render: () => codeBlock(JSON.stringify(payload.data, null, 2)) },
@@ -146,3 +154,41 @@ export function renderResult(feature, payload, ms = 0) {
   );
 }
 
+
+/** "Explain in plain English": the AI writes, the server checks every number it uses. */
+function explainBox(feature, payload, inputText) {
+  const box = h("div", { class: "stack tight" });
+  const show = (explained) =>
+    mount(
+      box,
+      h(
+        "div",
+        { class: "callout info explain" },
+        icon("spark"),
+        h(
+          "div",
+          { class: "stack tight" },
+          h("p", { class: "explain-text" }, explained.text),
+          h(
+            "div",
+            { class: "row" },
+            explained.ok && !explained.fallback
+              ? badge("AI-written · every number checked against the code", "good")
+              : badge(explained.fallback ? "Fallback text: the model invented numbers" : "Unchecked", "warn"),
+            explained.problems?.length ? h("span", { class: "faint" }, `Rejected: ${explained.problems.join(", ")}`) : null,
+          ),
+        ),
+      ),
+    );
+  const run = async () => {
+    mount(box, skeleton(2));
+    try {
+      show(await api.narrate(feature.key, { metrics: payload.metrics, data: payload.data }, inputText));
+    } catch (error) {
+      mount(box, errorState(error, button("Try again", { onClick: run })));
+    }
+  };
+  mount(box, button("Explain in plain English", { kind: "primary", iconName: "spark", onClick: run }));
+  box.id = "explain";
+  return box;
+}

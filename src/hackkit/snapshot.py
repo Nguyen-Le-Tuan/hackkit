@@ -11,7 +11,7 @@ Layout written under --out (default web/snapshots):
   index.json             what was saved and when
   health.json            like /api/health, with "static": true
   features.json          like /api/features
-  runs/<key>.json        [{"text": <input>, "result": <POST /api/run/<key> response>}, ...]
+  runs/<key>.json        [{"text": <input>, "result": <POST /api/run/<key>>, "narration": ...}]
   api/<name>.json        GET responses; <name> = snapshot_name(path), same rule as api.js
 """
 
@@ -94,7 +94,15 @@ def build_snapshot(
             result = response.json()
             if not result["ok"]:
                 problems.append(f"{key}: run failed: {result['error']}")
-            saved.append({"text": text, "result": result})
+            entry = {"text": text, "result": result}
+            if info.get("has_narrative") and result["ok"]:
+                facts = {"metrics": result["metrics"], "data": result["data"]}
+                explained = client.post(f"/api/narrate/{key}", json={"facts": facts})
+                if explained.status_code == 200:
+                    entry["narration"] = explained.json()
+                else:
+                    problems.append(f"{key}: narrate HTTP {explained.status_code}")
+            saved.append(entry)
         _write(out / "runs" / f"{key}.json", saved)
         runs[key] = len(saved)
         paths += list(app.state.features[key].snapshot_paths)

@@ -116,6 +116,25 @@ export async function run(key, body) {
   throw new ApiError("No server and no saved snapshot. Start the app with make run.");
 }
 
+/** Plain-English explanation of a run; every number in it is checked by the server. */
+export async function narrate(key, facts, inputText = "") {
+  if (state.mode === "live") {
+    const overrides = {};
+    const provider = prefs.get("provider");
+    const demo = prefs.get("demo_mode");
+    if (provider) overrides.provider = provider;
+    if (demo !== null) overrides.demo_mode = demo;
+    return fetchJSON(`api/narrate/${encodeURIComponent(key)}`, { method: "POST", body: { facts, ...overrides } });
+  }
+  if (state.mode === "static") {
+    const saved = await cached(`snapshots/runs/${encodeURIComponent(key)}.json`);
+    const entry = saved.find((e) => e.text.trim() === inputText.trim()) || saved[0];
+    if (!entry?.narration) throw new ApiError("No saved explanation. Run make snapshot.");
+    return { ...entry.narration, static: true };
+  }
+  throw new ApiError("No server and no saved snapshot.");
+}
+
 /** GET any /api path; in static mode reads the file `make snapshot` saved for it. */
 export async function get(path) {
   const clean = path.replace(/^\//, "");

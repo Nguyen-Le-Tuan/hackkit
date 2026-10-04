@@ -25,6 +25,7 @@ def test_build_snapshot_writes_every_file(tmp_path):
     assert health["static"] is True
     runs = json.loads((out / "runs" / "receipt.json").read_text())
     assert runs[0]["result"]["metrics"]["computed_total"] == 24.56
+    assert runs[0]["narration"]["ok"] and "$24.60" in runs[0]["narration"]["text"]
     assert {f["key"] for f in json.loads((out / "features.json").read_text())} >= {"receipt"}
 
 

@@ -22,6 +22,17 @@ steps = [
 ]
 
 [[shot]]
+name = "feature-explained"     # the AI explanation, with every number checked
+route = "#/feature/receipt"
+selector = ".grid.split > :last-child"
+steps = [
+  { click = "#run" },
+  { wait_for = "text=Explain in plain English" },
+  { click = "text=Explain in plain English" },
+  { wait_for = ".explain-text" },
+]
+
+[[shot]]
 name = "feature-result-card"   # just the result card, for a big slide image
 route = "#/feature/receipt"
 selector = ".grid.split > :last-child"

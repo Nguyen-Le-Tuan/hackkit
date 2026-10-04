@@ -185,6 +185,8 @@
 .callout.demo { border-color: color-mix(in srgb, var(--demo) 35%, transparent); background: var(--demo-soft); }
 .callout.demo svg { color: var(--demo); }
 .callout b { color: var(--text); }
+.callout.explain { font-size: var(--fs-md); }
+.explain-text { font-size: 1.05rem; line-height: 1.6; color: var(--text); }
 
 /* ---------- Key/value list and tables ---------- */
 .kv { display: grid; grid-template-columns: minmax(120px, max-content) 1fr; gap: 8px var(--space-4); margin: 0; }

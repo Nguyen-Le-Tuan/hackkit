@@ -11,7 +11,9 @@
       "summary": "3 item(s) from Corner Market.",
       "metrics": {
         "computed_total": 24.56,
-        "item_count": 3
+        "item_count": 3,
+        "stated_total": 24.6,
+        "difference": 0.04
       },
       "flags": [
         {
@@ -48,8 +50,17 @@
         "tax": 1.34,
         "stated_total": 24.6
       },
-      "markdown": "# Receipt checker\n\nGenerated 2026-10-03 19:21.\n\n3 item(s) from Corner Market.\n\n## Key numbers\n\n- computed_total: 24.56\n- item_count: 3\n\n## Needs human review\n\n- stated_total: Items plus tax add up to 24.56, but the receipt says 24.60.\n\n## Extracted data\n\n```json\n{\n  \"confidence\": 0.9,\n  \"uncertain_fields\": [],\n  \"merchant\": \"Corner Market\",\n  \"date\": \"2026-09-12\",\n  \"currency\": \"USD\",\n  \"items\": [\n    {\n      \"description\": \"Oat milk\",\n      \"quantity\": 2.0,\n      \"unit_price\": 3.49,\n      \"evidence\": \"2 x Oat milk 3.49\"\n    },\n    {\n      \"description\": \"Bagels (6)\",\n      \"quantity\": 1.0,\n      \"unit_price\": 4.25,\n      \"evidence\": \"1 x Bagels (6) 4.25\"\n    },\n    {\n      \"description\": \"Coffee beans\",\n      \"quantity\": 1.0,\n      \"unit_price\": 11.99,\n      \"evidence\": \"1 x Coffee beans 11.99\"\n    }\n  ],\n  \"tax\": 1.34,\n  \"stated_total\": 24.6\n}\n```\n",
-      "json": "{\n  \"feature\": \"receipt\",\n  \"generated_at\": \"2026-10-03T19:21:30\",\n  \"data\": {\n    \"confidence\": 0.9,\n    \"uncertain_fields\": [],\n    \"merchant\": \"Corner Market\",\n    \"date\": \"2026-09-12\",\n    \"currency\": \"USD\",\n    \"items\": [\n      {\n        \"description\": \"Oat milk\",\n        \"quantity\": 2.0,\n        \"unit_price\": 3.49,\n        \"evidence\": \"2 x Oat milk 3.49\"\n      },\n      {\n        \"description\": \"Bagels (6)\",\n        \"quantity\": 1.0,\n        \"unit_price\": 4.25,\n        \"evidence\": \"1 x Bagels (6) 4.25\"\n      },\n      {\n        \"description\": \"Coffee beans\",\n        \"quantity\": 1.0,\n        \"unit_price\": 11.99,\n        \"evidence\": \"1 x Coffee beans 11.99\"\n      }\n    ],\n    \"tax\": 1.34,\n    \"stated_total\": 24.6\n  },\n  \"metrics\": {\n    \"computed_total\": 24.56,\n    \"item_count\": 3\n  },\n  \"flags\": [\n    {\n      \"field\": \"stated_total\",\n      \"reason\": \"Items plus tax add up to 24.56, but the receipt says 24.60.\"\n    }\n  ],\n  \"error\": null\n}"
+      "markdown": "# Receipt checker\n\nGenerated 2026-10-03 21:35.\n\n3 item(s) from Corner Market.\n\n## Key numbers\n\n- computed_total: 24.56\n- item_count: 3\n- stated_total: 24.6\n- difference: 0.04\n\n## Needs human review\n\n- stated_total: Items plus tax add up to 24.56, but the receipt says 24.60.\n\n## Extracted data\n\n```json\n{\n  \"confidence\": 0.9,\n  \"uncertain_fields\": [],\n  \"merchant\": \"Corner Market\",\n  \"date\": \"2026-09-12\",\n  \"currency\": \"USD\",\n  \"items\": [\n    {\n      \"description\": \"Oat milk\",\n      \"quantity\": 2.0,\n      \"unit_price\": 3.49,\n      \"evidence\": \"2 x Oat milk 3.49\"\n    },\n    {\n      \"description\": \"Bagels (6)\",\n      \"quantity\": 1.0,\n      \"unit_price\": 4.25,\n      \"evidence\": \"1 x Bagels (6) 4.25\"\n    },\n    {\n      \"description\": \"Coffee beans\",\n      \"quantity\": 1.0,\n      \"unit_price\": 11.99,\n      \"evidence\": \"1 x Coffee beans 11.99\"\n    }\n  ],\n  \"tax\": 1.34,\n  \"stated_total\": 24.6\n}\n```\n",
+      "json": "{\n  \"feature\": \"receipt\",\n  \"generated_at\": \"2026-10-03T21:35:31\",\n  \"data\": {\n    \"confidence\": 0.9,\n    \"uncertain_fields\": [],\n    \"merchant\": \"Corner Market\",\n    \"date\": \"2026-09-12\",\n    \"currency\": \"USD\",\n    \"items\": [\n      {\n        \"description\": \"Oat milk\",\n        \"quantity\": 2.0,\n        \"unit_price\": 3.49,\n        \"evidence\": \"2 x Oat milk 3.49\"\n      },\n      {\n        \"description\": \"Bagels (6)\",\n        \"quantity\": 1.0,\n        \"unit_price\": 4.25,\n        \"evidence\": \"1 x Bagels (6) 4.25\"\n      },\n      {\n        \"description\": \"Coffee beans\",\n        \"quantity\": 1.0,\n        \"unit_price\": 11.99,\n        \"evidence\": \"1 x Coffee beans 11.99\"\n      }\n    ],\n    \"tax\": 1.34,\n    \"stated_total\": 24.6\n  },\n  \"metrics\": {\n    \"computed_total\": 24.56,\n    \"item_count\": 3,\n    \"stated_total\": 24.6,\n    \"difference\": 0.04\n  },\n  \"flags\": [\n    {\n      \"field\": \"stated_total\",\n      \"reason\": \"Items plus tax add up to 24.56, but the receipt says 24.60.\"\n    }\n  ],\n  \"error\": null\n}"
+    },
+    "narration": {
+      "text": "The receipt says $24.60, but the items plus tax add up to $24.56, so the customer was overcharged by $0.04. Check the register and refund the difference.",
+      "ok": true,
+      "checked": true,
+      "fallback": false,
+      "from_cache": false,
+      "attempts": 1,
+      "problems": []
     }
   }
 ]

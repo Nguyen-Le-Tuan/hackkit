@@ -6,7 +6,7 @@ import { createChart } from "../chart.js";
 import { createMap } from "../map.js";
 import {
   h, icon, iconNames, button, linkButton, badge, chip, source, demoBadge, card, metricTile, metrics, callout, kv,
-  table, tabs, codeBlock, disclosure, skeleton, spinner, emptyState, errorState, toast, drawer, dropzone,
+  table, tabs, codeBlock, disclosure, skeleton, spinner, emptyState, errorState, toast, drawer, dropzone, askBox,
 } from "../ui.js";
 
 const SAMPLE_ROWS = [
@@ -74,6 +74,18 @@ export async function render() {
         { key: "savings_usd", label: "Savings / yr", num: true, format: (v) => fmt.money(v) },
         { key: "confidence", label: "Confidence", num: true, format: (v) => fmt.pct(v, 0) },
       ]),
+    ),
+    section(
+      "Ask box (pair with hackkit.ask on the server)",
+      askBox({
+        examples: ["buildings over 10 floors", "top 2 by savings"],
+        onAsk: async (question) => {
+          // Demo only: a real page calls api.post("api/<key>/ask", { question }).
+          const rows = /top 2/.test(question) ? SAMPLE_ROWS.slice(0, 2) : SAMPLE_ROWS.filter((r) => r.floors > 10);
+          const understood = /top 2/.test(question) ? "sorted by savings_usd desc; top 2" : "min_floors >= 10";
+          return { understood, node: table(rows) };
+        },
+      }),
     ),
     section("Map (MapLibre, SVG fallback offline)", mapEl),
     section("Chart (Chart.js, SVG fallback offline)", chartEl),
