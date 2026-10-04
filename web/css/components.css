@@ -20,6 +20,7 @@
 }
 .nav a:hover { color: var(--text); background: var(--surface); text-decoration: none; }
 .nav a.active { color: var(--accent-ink); background: var(--accent); }
+.nav svg { width: 16px; height: 16px; flex: none; }
 .topbar .tools { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
 .icon-btn {
   display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px;
@@ -192,7 +193,7 @@
 .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
 table.table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .table th, .table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
-.table th { color: var(--muted); font-weight: 650; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.05em; background: var(--surface-2); position: sticky; top: 0; }
+.table th { white-space: nowrap; color: var(--muted); font-weight: 650; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.05em; background: var(--surface-2); position: sticky; top: 0; }
 .table tr:last-child td { border-bottom: 0; }
 .table tbody tr:hover { background: var(--accent-soft); }
 .table td.num, .table th.num { text-align: right; font-variant-numeric: tabular-nums; }

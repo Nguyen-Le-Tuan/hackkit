@@ -1,4 +1,5 @@
-.PHONY: setup run demo web snapshot web-test test lint fmt eval feature docker lanes
+.PHONY: setup run demo web snapshot web-test test lint fmt eval feature docker lanes \
+	shots deck demo-video pitch pages init-project
 
 PORT ?= 8000
 HOST ?= 127.0.0.1
@@ -59,7 +60,6 @@ HK_PY := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 hooks:  ## install the pre-commit guard for this clone (make setup should call this)
 	git config core.hooksPath scripts/hooks
 	@echo "hooks: pre-commit guard installed (scripts/hooks/pre-commit)."
-	@echo "hooks: reminder: run 'make hooks' once in every clone; 'make setup' should call it."
 
 guard:  ## check every tracked file: blocked docs, big files, gitlinks, symlinks, secrets
 	$(HK_PY) scripts/guard.py --all
@@ -88,3 +88,25 @@ private: ## make the GitHub repo private (asks first)
 
 public: ## make the GitHub repo public, after the guard passes (asks first)
 	$(HK_PY) scripts/visibility.py public
+
+# --- pitch (P2) ---
+# Judges score what they see: build it from the real app, all day long. Needs: pip install -e ".[pitch]"
+# && playwright install chromium (deck PDF: LibreOffice; MP4: ffmpeg). See docs/pitch/README.md.
+shots:  ## screenshots of the real app -> docs/pitch/shots/ (ONLY=name for one)
+	$(HK_PY) scripts/shots.py $(if $(ONLY),--only $(ONLY))
+
+deck:   ## slides from docs/pitch/deck.toml -> docs/pitch/out/deck.pptx + .pdf + previews
+	$(HK_PY) scripts/deck.py
+
+demo-video: ## captioned demo video from docs/pitch/demo_flow.toml -> docs/pitch/out/demo.mp4
+	$(HK_PY) scripts/demo_video.py
+
+pitch:  ## shots, then deck, then demo video
+	$(MAKE) --no-print-directory shots && $(MAKE) --no-print-directory deck && $(MAKE) --no-print-directory demo-video
+
+pages:  ## publish web/ + snapshots as a static "Try it" site on GitHub Pages
+	$(HK_PY) scripts/pages.py
+
+init-project: ## make init-project NAME="My App" TAGLINE="..." [TEAM="..."] [EVENT="..."]
+	@if [ -z "$(NAME)" ] || [ -z "$(TAGLINE)" ]; then echo 'usage: make init-project NAME="My App" TAGLINE="One line" [TEAM="Team · names"] [EVENT="Hackathon 2026"]'; exit 2; fi
+	$(HK_PY) scripts/init_project.py --name "$(NAME)" --tagline "$(TAGLINE)" $(if $(TEAM),--team "$(TEAM)") $(if $(EVENT),--event "$(EVENT)")

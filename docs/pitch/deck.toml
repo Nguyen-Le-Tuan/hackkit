@@ -1,0 +1,94 @@
+# The pitch deck as text. Run: make deck  ->  docs/pitch/out/<name>.pptx + .pdf + previews
+# Images come from `make shots` (docs/pitch/shots/). Speaker notes = what you SAY.
+# Rules that win: one idea per slide, < 40 words on screen, the live demo is never cut,
+# every number is real or marked demo = true (shown in red), and the slot time is respected.
+# Typical rubric: Impact, Innovation, Presentation, Future potential, Execution. Each slide says
+# which one it scores (rubric = ...): keep at least one slide for each.
+
+[deck]
+name = "deck"
+minutes = 4                       # the pitch slot; `make deck` warns when the slides add up to more
+footer = "hackkit · Team NAME"
+
+[theme]                           # optional overrides; the accent comes from web/config.json
+font = "Arial"                    # safe on every laptop; "Inter" only if the presenting machine has it
+
+[[slide]]
+kind = "title"
+eyebrow = "Hackathon name · Challenge"
+title = "hackkit"
+subtitle = "Messy input in, checked answers out."
+team = "Team NAME · Ana, Bo, Chi, Dan"
+image = "shots/home.png"
+seconds = 15
+rubric = "Presentation"
+notes = "Hook in one sentence: who suffers, and what we make possible today."
+
+[[slide]]
+kind = "statement"
+eyebrow = "The problem"
+text = "Checking documents by hand is slow, and mistakes slip through."
+subtext = "Say who has the problem and give one real number (from the partner or a source)."
+seconds = 25
+rubric = "Impact"
+notes = "Use the partner's own words. If you have a number, say where it comes from."
+
+[[slide]]
+kind = "steps"
+title = "How it works"
+steps = [
+  { title = "Paste or drop", text = "Text, an image or a PDF." },
+  { title = "The model reads", text = "Fields validated against a schema, with confidence." },
+  { title = "Code checks", text = "Math and rules in tested code; flags for a human." },
+]
+footnote = "The LLM never decides a number."
+seconds = 25
+rubric = "Innovation"
+notes = "Name the one thing other teams will not have."
+
+[[slide]]
+kind = "divider"
+text = "Live demo"
+subtext = "Backup: docs/pitch/out/demo.mp4"
+seconds = 100
+rubric = "Execution"
+notes = "Click Try, Run, point at the red flag, download the report. If anything fails, play the video."
+
+[[slide]]
+kind = "split"
+title = "Every number is checked"
+bullets = ["Computed by code, not guessed", "Flags what needs a human", "Report and data in one click"]
+image = "shots/feature-result.png"
+seconds = 20
+rubric = "Execution"
+notes = "Why judges can trust it: tests, evals, sources on every number."
+
+[[slide]]
+kind = "metrics"
+title = "Impact"
+metrics = [
+  { value = "8 s", label = "Time to answer", note = "vs. 15 min by hand" },
+  { value = "1 of 1", label = "Errors caught", note = "on the sample" },
+  { value = "$0.002", label = "Cost per run", note = "estimate", demo = true },
+]
+source = "Replace with real numbers and say where each comes from."
+seconds = 20
+rubric = "Impact"
+notes = "One number the judges will remember. Red numbers are illustrative: say so."
+
+[[slide]]
+kind = "bullets"
+title = "What's next"
+bullets = ["Pilot with the partner's team", "More document types", "Connect to their system"]
+seconds = 20
+rubric = "Future potential"
+notes = "Concrete next step with the partner, then the bigger vision in one line."
+
+[[slide]]
+kind = "closing"
+ask = "Give us one week with your team to pilot it."
+links = ["github.com/you/project", "Try it: you.github.io/project"]
+thanks = "Thank you · Team NAME"
+seconds = 15
+rubric = "Presentation"
+notes = "The ask, then thank you. Stop talking."

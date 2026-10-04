@@ -1,0 +1,36 @@
+# Screenshots for slides, README and Devpost. Run: make shots   (or: make shots ONLY=home)
+# Output: docs/pitch/shots/<name>.png (or <name>@<size>.png when a shot has several sizes).
+# Steps: see the docstring of scripts/browser_steps.py. Routes are the app's hash routes.
+# Rule: every screenshot in the pitch comes from here, so it shows the REAL app.
+
+[defaults]
+sizes = ["1440x900"]   # 16:9-ish desktop; slides crop nicely
+theme = "dark"         # projectors like dark; use "light" for print
+scale = 2              # retina-sharp PNGs
+full_page = false
+
+[[shot]]
+name = "home"
+route = "#/"
+
+[[shot]]
+name = "feature-result"
+route = "#/feature/receipt"
+steps = [
+  { click = "#run" },
+  { wait_for = "text=Needs human review" },
+]
+
+[[shot]]
+name = "feature-result-card"   # just the result card, for a big slide image
+route = "#/feature/receipt"
+selector = ".grid.split > :last-child"
+steps = [
+  { click = "#run" },
+  { wait_for = "text=Needs human review" },
+]
+
+[[shot]]
+name = "home-phone"
+route = "#/"
+sizes = ["390x844"]

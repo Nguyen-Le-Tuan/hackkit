@@ -147,10 +147,12 @@ async function boot() {
   let renderId = 0;
   async function render() {
     const id = ++renderId;
+    delete document.documentElement.dataset.ready; // set again when this page is drawn
     const found = resolve(routes, location.hash);
     for (const a of nav.querySelectorAll("a")) a.classList.toggle("active", found?.route.path === a.dataset.path);
     if (!found) {
       mount(main, h("div", { class: "page" }, errorState(new Error(`No page at ${location.hash}`), linkButton("Go home", "#/", { kind: "primary" }))));
+      document.documentElement.dataset.ready = "true";
       return;
     }
     const { route } = found;
@@ -162,14 +164,17 @@ async function boot() {
       if (id !== renderId) return; // a newer navigation won
       mount(main, node);
       window.scrollTo({ top: 0 });
+      document.documentElement.dataset.ready = "true";
     } catch (error) {
       console.error(error);
-      if (id === renderId) mount(main, h("div", { class: "page" }, errorState(error, linkButton("Go home", "#/", { kind: "primary" }))));
+      if (id === renderId) {
+        mount(main, h("div", { class: "page" }, errorState(error, linkButton("Go home", "#/", { kind: "primary" }))));
+        document.documentElement.dataset.ready = "true";
+      }
     }
   }
   window.addEventListener("hashchange", render);
-  await render();
-  document.documentElement.dataset.ready = "true"; // screenshot/video scripts wait for this
+  await render(); // render() sets <html data-ready="true">: screenshot/video scripts wait for it
 }
 
 boot().catch((error) => {
