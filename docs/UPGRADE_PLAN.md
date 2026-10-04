@@ -7,6 +7,10 @@ Giải thích viết bằng tiếng Việt; code, lệnh và tên file viết b�
 
 ---
 
+> **Trạng thái (2026-10-03):** P0–P5 đã làm xong và merge vào `main` (PR #1–#6). P6 (diễn tập) đã chạy thử
+> một lượt tự động trên bản clone mới; buổi diễn tập 5 giờ với cả đội vẫn là việc của đội trước giải lớn.
+> Kết quả từng giai đoạn: xem lịch sử PR trên GitHub và mục "Đã làm" ở cuối file.
+
 ## 0. Mục tiêu và nguyên tắc
 
 **Mục tiêu:** ở hackathon kế tiếp (Devpost hoặc UB), đến **T+1:30** đã có một bản end-to-end xấu nhưng chạy được và đã deploy.
@@ -196,3 +200,16 @@ trước/sau cho phần UI.
 - `src/hackkit`: providers, extract + retry, cache, connector, evals, demo mode.
 - `secret_scan.py`, guard của orchestrate (lid, lock, secret), luật "LLM không quyết định con số".
 - Test không gọi mạng; dữ liệu demo lưu sẵn; golden test với ví dụ của đối tác.
+
+---
+
+## Đã làm (tóm tắt theo PR)
+
+| PR | Giai đoạn | Nội dung |
+|---|---|---|
+| #1 | P0 | Cờ `--document`, `--with-file`, `--chosen` của orchestrate; kế hoạch này |
+| #2 | P1 | FastAPI + UI kit `web/` (thay Streamlit), static mode, sửa khóa cache |
+| #3 | P3 | `guard` + pre-commit, `make verify`, `make freeze` + CI, `make doctor`, `make private/public` |
+| #4 | P2 | `make shots`, `make deck`, `make demo-video`, `make pages`, `make init-project`, kit pitch, CI e2e |
+| #5 | P4 | `provenance`, `narrate` + nút Explain, `ask` + askBox, `golden`, scaffold đủ bộ |
+| #6 | P5 | DAY_OF mới, TASKS có mốc giờ + T0 pitch, `make lanes` báo trễ, AGENTS/README/spec, orchestrate đòi rubric map |

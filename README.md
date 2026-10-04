@@ -1,66 +1,120 @@
 # hackkit
 
-A personal hackathon framework. The infrastructure is done before the event, so event time
-goes to four things only: **the problem, one novel feature, the sponsor API, and the demo.**
+A hackathon template built to **win**, not just to run. The plumbing is done before the event, so
+event time goes to the four things judges score: **the problem, a demo with no mistakes, AI they can
+see, and a pitch that lands.**
 
-```
-messy input (text, image, PDF)
-        |
-        v
-  LLM extraction  ---->  Pydantic validation  ---(invalid)--->  retry with the errors
-        |                                                      (max 2 attempts)
-        v
-  deterministic rules()  -->  metrics + review flags  -->  Streamlit demo / Markdown / JSON
-```
+![The template's web app](docs/pitch/shots/home.png)
 
-## Why it is built this way
+| You get | So that |
+|---|---|
+| FastAPI + a plain HTML/CSS/JS UI kit (dark/light, maps, charts, no build step) | the demo looks like a product in hour one, and any agent can edit it |
+| LLM extraction with schema validation, retry, cache and offline demo mode | the model reads messy input; the demo never dies on stage |
+| `narrate` and `ask`: AI that explains and answers, with **every number checked by code** | judges SEE the AI, and never a wrong number |
+| Provenance badges, golden tests, evals | "where does this number come from?" has an answer on screen |
+| `make shots`, `make deck`, `make demo-video`, `make pages`, Devpost template | slides, video and a "Try it" link come from the real app in minutes |
+| `make verify`, a pre-commit guard, `make freeze`, `make doctor`, milestones in `make lanes` | four people and two AI agents ship in parallel without breaking `main` |
 
-- **The LLM reads; Python decides.** Models are good at turning messy input into fields and bad
-  at arithmetic and rules. Every feature splits the two, so the numbers in a demo are checked
-  by code, not guessed.
-- **Uncertainty is shown, not hidden.** Schemas inherit `Reviewable`, so the model reports its
-  confidence and the fields it guessed. Those become "needs human review" flags in the UI.
-- **The demo cannot die on stage.** Every successful model or API response is cached. Turn on
-  demo mode and the app replays saved results without touching the network.
-- **Provider-neutral.** Anthropic API, Groq (free tier), a local model through Ollama (if cloud
-  APIs are not allowed), or a fake client for tests and offline rehearsal. Same feature code for all.
-- **Measured, not vibes.** `hackkit.evals` scores extraction accuracy per field on labeled cases.
-
-## Quickstart
+## 60-second start
 
 ```bash
-make setup                  # venv + install + copy .env.example to .env
-source .venv/bin/activate   # once per terminal; make test/demo/run fail with "not found" without it
-make demo                   # runs the example feature offline, no key needed
-make test                   # full test suite, no network or key needed
-make lint                   # ruff check + format check (CI runs the same)
-make eval                   # scores every file in evals/cases/ (fake provider by default)
+make setup && source .venv/bin/activate   # venv, install, pre-commit guard; copies .env.example to .env
+make demo                                 # http://localhost:8000 — fake LLM, no key, no network
+make test && make lint                    # Python + JS tests, ruff
 ```
 
-Event day? Follow [docs/DAY_OF.md](docs/DAY_OF.md).
+Real model: set `LLM_PROVIDER=anthropic` (+ `ANTHROPIC_API_KEY`) or `groq` (+ `GROQ_API_KEY`) or
+`ollama` in `.env`, then `make run`. Pitch tools: `pip install -e ".[pitch]" && playwright install chromium`.
 
-To use a real model, set `LLM_PROVIDER=anthropic`, `LLM_MODEL` and `ANTHROPIC_API_KEY` in `.env`,
-then `make run`. For Groq, set `LLM_PROVIDER=groq` and `GROQ_API_KEY` (default model
-`openai/gpt-oss-120b`). For a local model, install Ollama and set `LLM_PROVIDER=ollama`.
+## Event day in ten commands
 
-## Add a feature in three steps
+The full runbook (Vietnamese) is [docs/DAY_OF.md](docs/DAY_OF.md). The spine:
 
 ```bash
-python -m hackkit.scaffold intake_triage "Intake triage"
+gh repo create <name> --template Nguyen-Le-Tuan/hackkit --private --clone && cd <name> && make setup
+./scripts/orchestrate.sh --now --transcript docs/<problem>.txt --document   # agents brief + plan the challenges
+make init-project NAME="My App" TAGLINE="One line" TEAM="Team · names"      # your name everywhere, product README
+make feature NAME=my_feature TITLE="My feature" PAGE=1                      # feature + test + eval + page
+make lanes                                    # who does what, what runs in parallel, which milestone is late
+make verify PR=12                             # merge only on "VERDICT: MERGE OK"
+make snapshot && make pages                   # offline copy + public "Try it" site
+make freeze                                   # 1h30 before the deadline: bug fixes only
+make pitch                                    # screenshots -> slides (PPTX + PDF) -> captioned demo video
+make doctor                                   # on the demo laptop, plus http://localhost:8000/#/doctor
 ```
 
-1. Edit the schema in `src/features/intake_triage/__init__.py`. Give each field a description.
-2. Write `INSTRUCTIONS` (what to extract) and `rules()` (the deterministic logic).
-3. Paste a realistic `sample_text` and `sample_response`, then restart the app. The feature
-   appears in the sidebar with upload, results, flags and downloads already working.
+## How it works
 
-`src/features/receipt/` is the reference example: the model lists the items, code adds them up
-and flags the receipt when the printed total does not match.
+```
+messy input (text, image, PDF)            question in plain English          computed result
+        │                                          │                                │
+  extract: LLM -> Pydantic schema         ask: LLM -> validated filter       narrate: LLM writes words
+  (validation retry, cache, demo mode)    apply_query: code runs it          code checks every number
+        │                                          │                                │
+  rules(): deterministic Python  ──►  metrics + review flags + sources  ──►  FastAPI /api  ──►  web/ UI
+                                                                                     └──► make snapshot -> static site
+```
+
+**The LLM reads and writes words; Python decides every number.** Uncertainty is shown (review flags,
+confidence, sources), never hidden.
+
+## Add a feature
+
+```bash
+make feature NAME=intake_triage TITLE="Intake triage" PAGE=1
+```
+
+1. Edit the schema in `src/features/intake_triage/__init__.py` (a `description=` on every field).
+2. Write `INSTRUCTIONS` (what to extract) and `rules()` (the deterministic logic) with tests.
+3. Paste a realistic `sample_text` and `sample_response`. The feature appears at
+   `#/feature/intake_triage` with input, file drop, results, flags, an Explain button and downloads.
+
+`src/features/receipt/` is the reference: the model lists the items, code adds them up, flags the
+4-cent mismatch, and the Explain button writes a sentence whose numbers are all verified.
+
+## AI judges can see, numbers they can trust
+
+```python
+from hackkit.narrate import narrate  # the AI explains; invented numbers are rejected
+
+text = narrate(
+    client,
+    {"savings_usd": 235406, "payback_years": 10.8},
+    instructions="Explain to the building owner why this upgrade pays off.",
+).text
+
+from hackkit.ask import Query, ask, apply_query  # plain-English question -> filter -> code
+
+q = ask(client, "offices in Allentown saving over $50k", BuildingQuery).data
+rows, understood = apply_query(buildings, q), q.explain()
+
+from hackkit.provenance import sourced, DEMO  # every value carries its source
+
+floors, cost = sourced(11, "OpenStreetMap", 0.9), sourced(8.0, DEMO)  # demo -> red in the UI
+
+from hackkit.golden import assert_close  # the partner's worked example as a test
+
+assert_close(result.model_dump(), {"kwh": 9047.6, "savings": 1447.6}, rel=1e-3)
+```
+
+![Explain: AI-written, every number checked](docs/pitch/shots/feature-explained.png)
+
+## Pitch kit
+
+`docs/pitch/README.md` has the timeline, the rubric map and the checklists. Everything is text you
+edit and a command that rebuilds it from the running app:
+
+| Command | From | To |
+|---|---|---|
+| `make shots` | `docs/pitch/shots.toml` | `docs/pitch/shots/*.png` (fails on any browser error) |
+| `make deck` | `docs/pitch/deck.toml` | `docs/pitch/out/deck.pptx` + PDF + previews; warns on wordy slides and overtime |
+| `make demo-video` | `docs/pitch/demo_flow.toml` | `docs/pitch/out/demo.mp4` with title cards, captions, a visible cursor |
+| `make pages` | `web/` + `web/snapshots/` | a static "Try it" site on GitHub Pages |
+| — | `docs/SUBMISSION.md` | the Devpost page, with a pre-submit checklist |
 
 ## Calling a sponsor or public API
 
 ```python
-from hackkit.cache import DiskCache
 from hackkit.connector import HttpConnector
 
 api = HttpConnector(
@@ -68,52 +122,44 @@ api = HttpConnector(
     headers={"Authorization": "Bearer ..."},
     cache=DiskCache(".cache/hackkit"),
 )
-data = api.get_json("/v1/things", params={"q": "bikes"})
+data = api.get_json("/v1/things", params={"q": "bikes"})  # timeout, retries, cache, demo replay
 ```
 
-Timeouts, retries on 5xx and 429, fail-fast on 4xx, caching and demo-mode replay are built in.
+Expose it to the UI with a `fastapi.APIRouter` on the feature (`Feature.router`, served at
+`/api/<key>/...`); list GET paths in `snapshot_paths` so the static site has them too.
 
-## Evals
+## Guards (rules enforced by machines)
 
-Add labeled cases to `evals/cases/<feature>.jsonl`:
+| Command / hook | Stops |
+|---|---|
+| pre-commit `scripts/guard.py` (+ CI) | partner documents outside `partner/`, files > 5 MB, `.env`, keys, gitlinks, escaping symlinks, `node_modules` |
+| `make verify PR=N` | PRs that target the wrong branch, conflict, fail lint/tests/smoke, or add forbidden strings |
+| `make freeze` + CI `freeze-check` | feature PRs after the freeze (only `bugfix`-labelled PRs pass) |
+| CI `e2e` | pages with JS errors or sideways scroll at desktop and phone size |
+| `make doctor` + `#/doctor` | a demo laptop without WebGL, fonts, snapshots, power or a free port |
 
-```json
-{"feature": "receipt", "text": "...", "expected": {"merchant": "Corner Market", "tax": 1.34}}
-```
-
-`python -m hackkit.evals evals/cases/receipt.jsonl` prints per-field accuracy and writes
-`evals/results/latest.md`. Put the table in your final README.
+Rules live in `hackkit.toml`.
 
 ## Layout
 
 ```
-src/hackkit/      framework: config, llm/, extract, pipeline, feature registry, connector,
-                  cache, export, evals, scaffold
+src/hackkit/      config, llm/, extract, narrate, ask, provenance, golden, pipeline, feature
+                  registry, connector, cache, export, evals, scaffold, server, snapshot
 src/features/     one package per feature (receipt/ is the example)
-app/              Streamlit demo shell
-tests/            unit tests and a headless app test (streamlit.testing)
-evals/cases/      labeled cases for accuracy checks
-CLAUDE.md         instructions for coding agents working in this repo
+web/              index.html, config.json, css/ (tokens, kit), js/ (app, api, ui, map, chart, pages/)
+scripts/          orchestrate.sh, lanes.py, guard.py, verify_pr.py, freeze.py, doctor.py,
+                  shots.py, deck.py, demo_video.py, pages.py, init_project.py
+docs/             DAY_OF.md (runbook), TASKS.md, spec.md, SUBMISSION.md, pitch/
+tests/ evals/     Python tests (incl. server, snapshot, pitch tools) and labelled eval cases
+partner/          (git-ignored) partner files, local only
 ```
-
-## Hackathon-day runbook
-
-1. Kickoff: listen, talk to the partner, write `docs/spec.md` and the Project section of
-   `CLAUDE.md`. Create a new repo from this template.
-2. `python -m hackkit.scaffold <name>` and design the schema with real partner vocabulary.
-3. Write `rules()` with tests first. This is where correctness lives.
-4. Wire the sponsor API through `HttpConnector`.
-5. Build the novel feature on top. Only touch `app/` for presentation tweaks.
-6. Add 5-10 eval cases and record accuracy.
-7. Demo freeze 1h30 before the deadline. Run every demo input once with the real model, then
-   switch on demo mode and rehearse.
 
 ## Fair-play note
 
-This framework is challenge-agnostic and was published before any event it is used at. All
-challenge-specific code is written during the event, in `src/features/` and app tweaks. If an
-event's rules restrict prior code, ask the organizers before using it, and disclose it in the
-submission either way.
+This template is challenge-agnostic and was published before any event it is used at. All
+challenge-specific code is written during the event. If an event's rules restrict prior code, ask
+the organizers before using it, and disclose it in the submission either way (`make init-project`
+writes that disclosure into your README).
 
 ## License
 

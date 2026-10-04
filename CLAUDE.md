@@ -9,3 +9,5 @@
 - Use plan mode for any change over ~50 lines, as AGENTS.md requires.
 - Planning documents from the kickoff run live in `docs/agent/` (BRIEF, PLANS, PLAN_REVIEW).
   They are proposals; the human-approved decisions are in `docs/spec.md`.
+- UI work: open the app (`make run`) and check `#/kit` for components before writing new CSS; verify
+  with `python scripts/shots.py --smoke` and look at the screenshot from `make shots ONLY=<name>`.
