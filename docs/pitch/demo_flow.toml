@@ -1,6 +1,7 @@
 # The demo video, as a script. Run: make demo-video  ->  docs/pitch/out/demo.mp4
 # Captions are burned in, so the video works with the sound off (most judges watch muted).
 # Keep it under 3 minutes (Devpost) and show the WOW moment in the first 20 seconds.
+# Rewrite the captions for YOUR story; `make remove-example` points the routes at your feature.
 # Steps: see the docstring of scripts/browser_steps.py.
 
 [video]
@@ -20,13 +21,13 @@ subtitle = "Messy input in, checked answers out"
 seconds = 2.5
 
 [[step]]
-caption = "The problem: checking documents by hand is slow, and mistakes slip through."
+caption = "The problem, in one sentence: who loses what, and how often."
 
 [[step]]
 wait = 2500
 
 [[step]]
-caption = "Open the receipt checker."
+caption = "Open the feature."
 
 [[step]]
 goto = "#/feature/receipt"      # a route, not a button label: stays valid when features change
@@ -35,7 +36,7 @@ goto = "#/feature/receipt"      # a route, not a button label: stays valid when 
 wait_for = "#run"
 
 [[step]]
-caption = "Paste any receipt. An LLM reads it into a validated schema."
+caption = "Paste the input. An LLM reads it into a validated schema."
 
 [[step]]
 highlight = "#input-text"
@@ -45,13 +46,13 @@ seconds = 2
 click = "#run"
 
 [[step]]
-wait_for = "text=Needs human review"
+wait_for = "[data-result]"
 
 [[step]]
-caption = "Plain, tested code does the math, and catches the 4-cent mistake."
+caption = "Plain, tested code does the math and flags what needs a human."
 
 [[step]]
-highlight = ".callout.warn"
+highlight = ".metrics"
 seconds = 2.5
 
 [[step]]

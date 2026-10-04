@@ -18,7 +18,7 @@ name = "feature-result"
 route = "#/feature/receipt"
 steps = [
   { click = "#run" },
-  { wait_for = "text=Needs human review" },
+  { wait_for = "[data-result]" },
 ]
 
 [[shot]]
@@ -38,7 +38,7 @@ route = "#/feature/receipt"
 selector = ".grid.split > :last-child"
 steps = [
   { click = "#run" },
-  { wait_for = "text=Needs human review" },
+  { wait_for = "[data-result]" },
 ]
 
 [[shot]]
