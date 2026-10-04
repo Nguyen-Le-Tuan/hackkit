@@ -1,0 +1,38 @@
+name: pages
+
+# Publishes web/ (with web/snapshots/) as a static site: the "Try it" link for Devpost.
+# Turn it on once with `make pages` (enables GitHub Pages and sets PAGES_ENABLED=true);
+# after that every push to main that touches web/ redeploys. Free plans need a public repo.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["web/**"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: vars.PAGES_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check the offline snapshot exists
+        run: |
+          test -f web/snapshots/index.json || { echo "web/snapshots missing: run make snapshot and commit it"; exit 1; }
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4

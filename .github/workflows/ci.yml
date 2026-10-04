@@ -33,6 +33,23 @@ jobs:
             python -m hackkit.evals "$f" --out "evals/results/$(basename "$f" .jsonl).md"
           done
 
+  # Real browser: open every page at desktop and phone size; fail on any JS error or sideways
+  # scroll. Same check as `python scripts/shots.py --smoke` locally.
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      LLM_PROVIDER: fake
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e ".[dev,pitch]"
+      - run: python -m playwright install --with-deps chromium
+      - name: Browser smoke test
+        run: python scripts/shots.py --smoke
+
   # Demo freeze (make freeze): while the base branch has a .freeze file, only PRs carrying the
   # [freeze].label from hackkit.toml (default "bugfix") pass. `make freeze` makes this check
   # required through branch protection when the repo plan allows it.
