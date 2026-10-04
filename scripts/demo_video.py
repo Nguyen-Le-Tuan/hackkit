@@ -89,6 +89,7 @@ def record(base: str, flow: dict, out: Path) -> int:
             + "});"
         )
         page = context.new_page()
+        page.set_default_timeout(10_000)  # a missing button fails fast, naming the step
         browser_steps.console_watch(page, errors)
         failed = None
         for number, step in enumerate(steps, start=1):

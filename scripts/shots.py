@@ -26,6 +26,7 @@ from appserver import ROOT, app_server  # noqa: E402
 
 CONFIG = ROOT / "docs" / "pitch" / "shots.toml"
 DEFAULT_SMOKE_ROUTES = ["#/", "#/kit", "#/doctor"]
+STEP_TIMEOUT_MS = 10_000  # a missing button fails fast with the step in the message
 
 
 def parse_size(text: str) -> tuple[int, int]:
@@ -68,6 +69,7 @@ def take(base: str, defaults: dict[str, Any], shots: list[dict[str, Any]], out: 
                 )
                 context.add_init_script(browser_steps.theme_init_script(theme))
                 page = context.new_page()
+                page.set_default_timeout(STEP_TIMEOUT_MS)
                 errors: list[str] = []
                 browser_steps.console_watch(page, errors)
                 try:
@@ -106,13 +108,18 @@ def smoke(base: str, routes: list[str]) -> int:
     from playwright.sync_api import sync_playwright
 
     problems: list[str] = []
+    checked = 0
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         for width, height in ((1440, 900), (390, 844)):
             page = browser.new_page(viewport={"width": width, "height": height})
+            page.set_default_timeout(STEP_TIMEOUT_MS)
             errors: list[str] = []
             browser_steps.console_watch(page, errors)
-            for route in routes:
+            # Every page in the top bar is checked too (custom pages added during the event).
+            browser_steps.goto(page, base, "#/")
+            nav = page.eval_on_selector_all(".nav a", "els => els.map(a => a.getAttribute('href'))")
+            for route in dict.fromkeys([*routes, *nav]):
                 try:
                     browser_steps.goto(page, base, route)
                     overflow = page.evaluate(
@@ -125,11 +132,12 @@ def smoke(base: str, routes: list[str]) -> int:
                 except Exception as exc:  # noqa: BLE001
                     problems.append(f"{route} @ {width}px: {str(exc).splitlines()[0]}")
             problems += [f"@ {width}px: {e}" for e in errors]
+            checked = len(dict.fromkeys([*routes, *nav]))
             page.close()
         browser.close()
     for problem in problems:
         print(f"  PROBLEM {problem}")
-    print(f"smoke: {len(routes)} route(s) x 2 sizes, {len(problems)} problem(s)")
+    print(f"smoke: {checked} route(s) x 2 sizes, {len(problems)} problem(s)")
     return 1 if problems else 0
 
 

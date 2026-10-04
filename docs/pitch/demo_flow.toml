@@ -29,7 +29,7 @@ wait = 2500
 caption = "Open the receipt checker."
 
 [[step]]
-click = "text=Try Receipt checker"
+goto = "#/feature/receipt"      # a route, not a button label: stays valid when features change
 
 [[step]]
 wait_for = "#run"

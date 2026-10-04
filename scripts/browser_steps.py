@@ -167,7 +167,7 @@ def run_step(page: Any, base: str, step: dict[str, Any], *, video: bool = False)
                 _move_to(page, step["hover"], steps=24)
             page.locator(step["hover"]).first.hover()
         elif action == "wait_for":
-            page.locator(step["wait_for"]).first.wait_for(state="visible", timeout=20000)
+            page.locator(step["wait_for"]).first.wait_for(state="visible")
             page.wait_for_timeout(300)
         elif action == "wait":
             page.wait_for_timeout(int(step["wait"]))
