@@ -51,6 +51,58 @@ def history_leaks(repo: Path, cfg: hackkit_config.GuardConfig) -> list[str]:
     return sorted(leaks)
 
 
+def set_visibility(root: Path, visibility: str) -> int:
+    """`gh repo edit --visibility`; older gh (< 2.50) lacks the confirmation flag, so fall back to
+    the REST API (`PATCH repos/{owner}/{repo}`), which every gh version can call."""
+    proc = subprocess.run(
+        [
+            "gh",
+            "repo",
+            "edit",
+            "--visibility",
+            visibility,
+            "--accept-visibility-change-consequences",
+        ],  # fmt: skip
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode == 0:
+        return 0
+    name = subprocess.run(
+        ["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    ).stdout.strip()
+    if not name:
+        print(proc.stderr.strip() or "gh could not find this repo (gh auth status?)")
+        return proc.returncode or 1
+    api = subprocess.run(
+        [
+            "gh",
+            "api",
+            "-X",
+            "PATCH",
+            f"repos/{name}",
+            "-f",
+            f"visibility={visibility}",
+            "-q",
+            ".visibility",
+        ],  # fmt: skip
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if api.returncode != 0 or api.stdout.strip() != visibility:
+        print(api.stderr.strip() or proc.stderr.strip())
+        return api.returncode or 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("visibility", choices=["private", "public"])
@@ -86,21 +138,10 @@ def main(argv: list[str] | None = None) -> int:
         if answer.strip().lower() != "yes":
             print("cancelled")
             return 1
-    proc = subprocess.run(
-        [
-            "gh",
-            "repo",
-            "edit",
-            "--visibility",
-            args.visibility,
-            "--accept-visibility-change-consequences",
-        ],
-        cwd=root,
-        check=False,
-    )
-    if proc.returncode == 0:
+    code = set_visibility(root, args.visibility)
+    if code == 0:
         print(f"repo is now {args.visibility}")
-    return proc.returncode
+    return code
 
 
 if __name__ == "__main__":

@@ -120,3 +120,27 @@ def test_freeze_refuses_another_branch(repo, capsys):
     assert freeze.cmd_freeze(repo, cfg, protect=False) == 1
     assert "must land on main" in capsys.readouterr().out
     assert not (repo / ".freeze").exists()
+
+
+def test_visibility_falls_back_to_the_rest_api_on_old_gh(monkeypatch, tmp_path):
+    """gh < 2.50 rejects --accept-visibility-change-consequences; the API call still works."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import visibility
+
+    calls = []
+
+    def fake_run(cmd, **_kwargs):
+        calls.append(cmd)
+        if cmd[:3] == ["gh", "repo", "edit"]:
+            return subprocess.CompletedProcess(cmd, 1, "", "unknown flag")
+        if cmd[:3] == ["gh", "repo", "view"]:
+            return subprocess.CompletedProcess(cmd, 0, "me/app\n", "")
+        return subprocess.CompletedProcess(cmd, 0, "private\n", "")
+
+    monkeypatch.setattr(visibility.subprocess, "run", fake_run)
+    assert visibility.set_visibility(tmp_path, "private") == 0
+    assert calls[-1][:5] == ["gh", "api", "-X", "PATCH", "repos/me/app"]
